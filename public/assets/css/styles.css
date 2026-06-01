@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+
+body {
+	font-family: 'Montserrat';
+}
+
+.theme-dark .ts-input>input {
+	color: #fff;
+}
+
+.btn-red {
+	background: #1a2234 !important;
+	border-color: #1a2234 !important;
+	color: #ffffff !important;
+}
+
+.btn-red:hover {
+	background: #252f48 !important;
+	border-color: #252f48 !important;
+	color: #ffffff !important;
+}
