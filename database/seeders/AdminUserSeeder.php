@@ -18,7 +18,8 @@ class AdminUserSeeder extends Seeder
             ['user' => 'admin'], // Search by 'user' column
             [
                 'name' => 'Administrador',
-                'password' => bcrypt('admin123')
+                'password' => bcrypt('admin123'),
+                'role' => 'admin'
             ]
         );
     }

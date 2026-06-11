@@ -18,7 +18,8 @@ class AlmacenUserSeeder extends Seeder
             ['user' => 'almacen'],
             [
                 'name' => 'Usuario Almacén',
-                'password' => bcrypt('almacen123')
+                'password' => bcrypt('almacen123'),
+                'role' => 'almacen'
             ]
         );
     }
