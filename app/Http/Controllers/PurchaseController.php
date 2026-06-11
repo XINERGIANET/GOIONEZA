@@ -15,6 +15,8 @@ class PurchaseController extends Controller
         
         $purchases = Purchase::active()->when($request->description, function($query, $description){
             return $query->where('description', 'like', '%'.$description.'%');
+        })->when($request->provider, function($query, $provider){
+            return $query->where('provider', 'like', '%'.$provider.'%');
         })->when($request->start_date, function($query, $start_date){
             return $query->whereDate('date', '>=', $start_date);
         })->when($request->end_date, function($query, $end_date){

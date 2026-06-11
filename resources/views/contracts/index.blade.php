@@ -19,6 +19,12 @@
 			<a href="{{ route('contracts.charges') }}" class="btn btn-success">
 				<i class="ti ti-cash icon"></i> Cobranzas
 			</a>
+			<a href="{{ route('export', ['module' => 'contracts', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'contracts', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div class="text-center">
 			<span class="d-block small">
@@ -153,40 +159,70 @@
   			</div>
   			<div class="modal-body">
   			  <div class="row">
-  			  	<div class="col-lg-4">
-  			  		<div class="mb-3">
-  			  			<label class="form-label required">DNI</label>
-  			  			<input type="text" class="form-control" name="document" autocomplete="off">
-  			  		</div>
-  			  	</div>
-  			  	<div class="col-lg-4">
-  			  		<div class="mb-3">
-  			  			<label class="form-label required">Nombre</label>
-  			  			<input type="text" class="form-control" name="name" autocomplete="off">
-  			  		</div>
-  			  	</div>
-  			  	<div class="col-lg-4">
-  			  		<div class="mb-3">
-  			  			<label class="form-label">RUC</label>
-  			  			<input type="text" class="form-control" name="business_document" autocomplete="off">
-  			  		</div>
-  			  	</div>
-  			  	<div class="col-lg-4">
-  			  		<div class="mb-3">
-  			  			<label class="form-label">Razón social</label>
-  			  			<input type="text" class="form-control" name="business_name" autocomplete="off">
-  			  		</div>
-  			  	</div>
-  			  	<div class="col-lg-4">
-  			  		<div class="mb-3">
-  			  			<label class="form-label">Teléfono</label>
-  			  			<input type="text" class="form-control" name="phone" autocomplete="off">
-  			  		</div>
-  			  	</div>
-  			  	<div class="col-lg-4">
-  			  		<div class="mb-3">
-  			  			<label class="form-label">Correo electrónico</label>
-  			  			<input type="text" class="form-control" name="email" autocomplete="off">
+  			  	<div class="col-lg-12">
+  			  		<div class="card bg-light mb-3">
+  			  			<div class="card-header py-2">
+  			  				<h6 class="mb-0">Agregar Cliente(s)</h6>
+  			  			</div>
+  			  			<div class="card-body">
+  			  				<div class="row">
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label required">DNI</label>
+  			  							<input type="text" class="form-control" id="tmp_document" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label required">Nombre</label>
+  			  							<input type="text" class="form-control" id="tmp_name" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">Teléfono</label>
+  			  							<input type="text" class="form-control" id="tmp_phone" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">RUC</label>
+  			  							<input type="text" class="form-control" id="tmp_business_document" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">Razón social</label>
+  			  							<input type="text" class="form-control" id="tmp_business_name" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">Correo electrónico</label>
+  			  							<input type="text" class="form-control" id="tmp_email" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-12 text-end">
+  			  						<button type="button" class="btn btn-success" id="btnAddClient"><i class="ti ti-plus icon"></i> Agregar a la tabla</button>
+  			  					</div>
+  			  				</div>
+  			  				<div class="table-responsive mt-3">
+  			  					<table class="table table-bordered table-sm" id="tblClients">
+  			  						<thead>
+  			  							<tr>
+  			  								<th>DNI</th>
+  			  								<th>Nombre</th>
+  			  								<th>Teléfono</th>
+  			  								<th>RUC / Razón Social</th>
+  			  								<th>Correo</th>
+  			  								<th>Acción</th>
+  			  							</tr>
+  			  						</thead>
+  			  						<tbody>
+  			  						</tbody>
+  			  					</table>
+  			  				</div>
+  			  			</div>
   			  		</div>
   			  	</div>
   			  	<div class="col-lg-4">
@@ -357,7 +393,7 @@
 </div>
 
 <div class="modal modal-blur fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
+  <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
   	<div class="modal-content">
   		<form id="editForm" method="POST">
   			<div class="modal-header">
@@ -366,42 +402,72 @@
   			</div>
   			<div class="modal-body">
   				<div class="row">
-  					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label required">DNI</label>
-  							<input type="text" class="form-control" name="document" id="editDocument" autocomplete="off">
-  						</div>
-  					</div>
-  					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label required">Nombre</label>
-  							<input type="text" class="form-control" name="name" id="editName" autocomplete="off">
-  						</div>
-  					</div>
-  					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label">RUC</label>
-  							<input type="text" class="form-control" name="business_document" id="editBusinessDocument" autocomplete="off">
-  						</div>
-  					</div>
-  					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label">Razón social</label>
-  							<input type="text" class="form-control" name="business_name" id="editBusinessName" autocomplete="off">
-  						</div>
-  					</div>
-  					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label">Teléfono</label>
-  							<input type="text" class="form-control" name="phone" id="editPhone" autocomplete="off">
-  						</div>
-  					</div>
-  					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label">Correo electrónico</label>
-  							<input type="text" class="form-control" name="email" id="editEmail" autocomplete="off">
-  						</div>
-  					</div>
+  			  	<div class="col-lg-12">
+  			  		<div class="card bg-light mb-3">
+  			  			<div class="card-header py-2">
+  			  				<h6 class="mb-0">Agregar Cliente(s)</h6>
+  			  			</div>
+  			  			<div class="card-body">
+  			  				<div class="row">
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label required">DNI</label>
+  			  							<input type="text" class="form-control" id="edit_tmp_document" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label required">Nombre</label>
+  			  							<input type="text" class="form-control" id="edit_tmp_name" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">Teléfono</label>
+  			  							<input type="text" class="form-control" id="edit_tmp_phone" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">RUC</label>
+  			  							<input type="text" class="form-control" id="edit_tmp_business_document" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">Razón social</label>
+  			  							<input type="text" class="form-control" id="edit_tmp_business_name" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-4">
+  			  						<div class="mb-3">
+  			  							<label class="form-label">Correo electrónico</label>
+  			  							<input type="text" class="form-control" id="edit_tmp_email" autocomplete="off">
+  			  						</div>
+  			  					</div>
+  			  					<div class="col-lg-12 text-end">
+  			  						<button type="button" class="btn btn-success" id="btnEditAddClient"><i class="ti ti-plus icon"></i> Agregar a la tabla</button>
+  			  					</div>
+  			  				</div>
+  			  				<div class="table-responsive mt-3">
+  			  					<table class="table table-bordered table-sm" id="editTblClients">
+  			  						<thead>
+  			  							<tr>
+  			  								<th>DNI</th>
+  			  								<th>Nombre</th>
+  			  								<th>Teléfono</th>
+  			  								<th>RUC / Razón Social</th>
+  			  								<th>Correo</th>
+  			  								<th>Acción</th>
+  			  							</tr>
+  			  						</thead>
+  			  						<tbody>
+  			  						</tbody>
+  			  					</table>
+  			  				</div>
+  			  			</div>
+  			  		</div>
+  			  	</div>
   					<div class="col-lg-6">
   						<div class="mb-3">
   							<label class="form-label required">Locación</label>
@@ -611,6 +677,45 @@
 		}
 	});
 
+	let clientIndex = 0;
+	$('#btnAddClient').click(function() {
+	    let doc = $('#tmp_document').val();
+	    let name = $('#tmp_name').val();
+	    let phone = $('#tmp_phone').val();
+	    let b_doc = $('#tmp_business_document').val();
+	    let b_name = $('#tmp_business_name').val();
+	    let email = $('#tmp_email').val();
+
+	    if(doc == '' || name == '') {
+	        ToastError.fire({ text: 'DNI y Nombre son obligatorios' });
+	        return;
+	    }
+
+	    let tr = `
+	    <tr>
+	        <td>${doc}<input type="hidden" name="clients[${clientIndex}][document]" value="${doc}"></td>
+	        <td>${name}<input type="hidden" name="clients[${clientIndex}][name]" value="${name}"></td>
+	        <td>${phone}<input type="hidden" name="clients[${clientIndex}][phone]" value="${phone}"></td>
+	        <td>${b_doc} - ${b_name}<input type="hidden" name="clients[${clientIndex}][business_document]" value="${b_doc}"><input type="hidden" name="clients[${clientIndex}][business_name]" value="${b_name}"></td>
+	        <td>${email}<input type="hidden" name="clients[${clientIndex}][email]" value="${email}"></td>
+	        <td><button type="button" class="btn btn-sm btn-danger btn-remove-client"><i class="ti ti-trash"></i></button></td>
+	    </tr>
+	    `;
+	    $('#tblClients tbody').append(tr);
+	    clientIndex++;
+
+	    $('#tmp_document').val('');
+	    $('#tmp_name').val('');
+	    $('#tmp_phone').val('');
+	    $('#tmp_business_document').val('');
+	    $('#tmp_business_name').val('');
+	    $('#tmp_email').val('');
+	});
+
+	$(document).on('click', '.btn-remove-client', function() {
+	    $(this).closest('tr').remove();
+	});
+
 	$('#storeForm').submit(function(e){
 		e.preventDefault();
 
@@ -644,12 +749,48 @@
 			url: '{{ route('contracts.index') }}' + '/' + id + '/edit/',
 			method: 'GET',
 			success: function(data){
-				$('#editDocument').val(data.document);
-				$('#editName').val(data.name);
-				$('#editBusinessDocument').val(data.business_document);
-				$('#editBusinessName').val(data.business_name);
-				$('#editPhone').val(data.phone);
-				$('#editEmail').val(data.email);
+				$('#editTblClients tbody').empty();
+				let editClientIndex = 0;
+				let renderClientRow = function(c) {
+				    let doc = c.document || '';
+				    let name = c.name || '';
+				    let phone = c.phone || '';
+				    let b_doc = c.business_document || '';
+				    let b_name = c.business_name || '';
+				    let email = c.email || '';
+				    let tr = `
+					<tr>
+					    <td>${doc}<input type="hidden" name="clients[${editClientIndex}][document]" value="${doc}"></td>
+					    <td>${name}<input type="hidden" name="clients[${editClientIndex}][name]" value="${name}"></td>
+					    <td>${phone}<input type="hidden" name="clients[${editClientIndex}][phone]" value="${phone}"></td>
+					    <td>${b_doc} - ${b_name}<input type="hidden" name="clients[${editClientIndex}][business_document]" value="${b_doc}"><input type="hidden" name="clients[${editClientIndex}][business_name]" value="${b_name}"></td>
+					    <td>${email}<input type="hidden" name="clients[${editClientIndex}][email]" value="${email}"></td>
+					    <td><button type="button" class="btn btn-sm btn-danger btn-remove-client"><i class="ti ti-trash"></i></button></td>
+					</tr>
+				    `;
+				    $('#editTblClients tbody').append(tr);
+				    editClientIndex++;
+				};
+				if(data.clients && data.clients.length > 0) {
+				    data.clients.forEach(renderClientRow);
+				} else {
+				    renderClientRow(data);
+				}
+
+				$('#btnEditAddClient').off('click').on('click', function() {
+				    let doc = $('#edit_tmp_document').val();
+				    let name = $('#edit_tmp_name').val();
+				    if(doc == '' || name == '') {
+				        ToastError.fire({ text: 'DNI y Nombre son obligatorios' });
+				        return;
+				    }
+				    renderClientRow({
+				        document: doc, name: name, phone: $('#edit_tmp_phone').val(), 
+				        business_document: $('#edit_tmp_business_document').val(), 
+				        business_name: $('#edit_tmp_business_name').val(), email: $('#edit_tmp_email').val()
+				    });
+				    $('#edit_tmp_document, #edit_tmp_name, #edit_tmp_phone, #edit_tmp_business_document, #edit_tmp_business_name, #edit_tmp_email').val('');
+				});
 				$('#editLocationId').val(data.location_id);
 				$('#editEventTypeId').val(data.event_type_id);
 				$('#editPeopleNumber').val(data.people_number);

@@ -14,7 +14,12 @@
 <div class="card">
 	<div class="card-header d-flex justify-content-between flex-column flex-sm-row gap-2">
 		<div>
-			
+			<a href="{{ route('export', ['module' => 'charges', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'charges', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div class="text-center">
 			<span class="d-block small">
@@ -85,10 +90,10 @@
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
-								<button class="btn btn-icon btn-primary btn-payment" data-id="{{ $contract->id }}" title="Pagar">
+								<button class="btn btn-icon btn-primary btn-payment" data-id="{{ $contract->id }}" title="Pagar" data-bs-toggle="tooltip">
 									<i class="ti ti-cash icon"></i>
 								</button>
-								<button class="btn btn-icon btn-primary btn-payments" data-id="{{ $contract->id }}" title="Pagos realizados">
+								<button class="btn btn-icon btn-primary btn-payments" data-id="{{ $contract->id }}" title="Pagos realizados" data-bs-toggle="tooltip">
 									<i class="ti ti-list icon"></i>
 								</button>
 							</div>

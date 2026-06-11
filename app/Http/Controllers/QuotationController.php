@@ -15,7 +15,7 @@ class QuotationController extends Controller
     {
         $quotations = Quotation::active()->when($request->search, function ($query, $search) {
             return $query->where('name', 'like', '%' . $search . '%');
-        })->paginate(20);
+        })->orderBy('id', 'desc')->paginate(20);
         $packages = Package::active()->get();
         return view('quotations.index', compact('quotations', 'packages'));
     }
@@ -28,7 +28,9 @@ class QuotationController extends Controller
             'phone' => 'required',
             'package_id' => 'required',
             'people_number' => 'required|integer',
+            'date' => 'required|date',
             'event_date' => 'required|date',
+            'visit_date' => 'nullable|date',
             'answer_date' => 'required|date'
         ]);
 
@@ -38,8 +40,6 @@ class QuotationController extends Controller
                 'error' => $validator->errors()->first()
             ]);
         }
-
-        $request->merge(['date' => now()]);
 
         Quotation::create($request->all());
 
@@ -56,8 +56,11 @@ class QuotationController extends Controller
             'phone' => $quotation->phone,
             'package_id' => $quotation->package_id,
             'people_number' => $quotation->people_number,
+            'date' => $quotation->date->format('Y-m-d'),
             'event_date' => $quotation->event_date->format('Y-m-d'),
+            'visit_date' => $quotation->visit_date ? $quotation->visit_date->format('Y-m-d') : null,
             'answer_date' => $quotation->answer_date->format('Y-m-d'),
+            'observations' => $quotation->observations,
         ]);
     }
 
@@ -68,7 +71,9 @@ class QuotationController extends Controller
             'phone' => 'required',
             'package_id' => 'required',
             'people_number' => 'required|integer',
+            'date' => 'required|date',
             'event_date' => 'required|date',
+            'visit_date' => 'nullable|date',
             'answer_date' => 'required|date'
         ]);
 
@@ -106,7 +111,7 @@ class QuotationController extends Controller
         $fpdf->AddFont('Montserrat', '');
         $fpdf->AddFont('Montserrat', 'B');
 
-        $fpdf->Image(asset('assets/images/logonew2.png'), 15, 15, 45);
+        $fpdf->Image(public_path('assets/images/logonew2.png'), 15, 15, 45);
 
         $fpdf->Ln(20);
 
@@ -163,6 +168,13 @@ class QuotationController extends Controller
 
         $fpdf->Cell(140, 10, $quotation->event_date->format('d/m/Y'), 0, 1);
 
+        if ($quotation->visit_date) {
+            $fpdf->SetFont('Montserrat', 'B', 12);
+            $fpdf->Cell(50, 10, utf8_decode('Fecha de visita:'));
+            $fpdf->SetFont('Montserrat', '', 12);
+            $fpdf->Cell(140, 10, $quotation->visit_date->format('d/m/Y'), 0, 1);
+        }
+
         $fpdf->SetFont('Montserrat', 'B', 12);
 
         $fpdf->Cell(50, 10, utf8_decode('Fecha de respuesta:'));
@@ -170,6 +182,13 @@ class QuotationController extends Controller
         $fpdf->SetFont('Montserrat', '', 12);
 
         $fpdf->Cell(140, 10, $quotation->answer_date->format('d/m/Y'), 0, 1);
+
+        if ($quotation->observations) {
+            $fpdf->SetFont('Montserrat', 'B', 12);
+            $fpdf->Cell(50, 10, utf8_decode('Observaciones:'));
+            $fpdf->SetFont('Montserrat', '', 12);
+            $fpdf->MultiCell(140, 10, utf8_decode($quotation->observations), 0, 1);
+        }
 
 
 

@@ -15,6 +15,9 @@ class WebController extends Controller
 {
     public function index(Request $request)
     {
+        if (auth()->user()->role == 'almacen') {
+            return redirect()->route('products.index');
+        }
 
         $contracts = Contract::active()->when($request->start_date, function ($query, $start_date) {
             return $query->whereDate('date', '>=', $start_date);
@@ -154,7 +157,7 @@ class WebController extends Controller
 
         $fpdf->SetFont('Montserrat', 'B', 16);
 
-        $fpdf->Image(asset('assets/images/logonew2.png'), 15, 15, 45);
+        $fpdf->Image(public_path('assets/images/logonew2.png'), 15, 15, 45);
 
         $fpdf->Ln(20);
 
@@ -261,5 +264,25 @@ class WebController extends Controller
         return view('help');
     }
 
+    public function searchDni(Request $request)
+    {
+        $dni = $request->numero;
+        $token = env('APIRENIEC_TOKEN');
+        
+        // Remove quotes if they exist in the env variable just in case
+        $token = trim($token, '"\'');
+        
+        $url = env('APIRENIEC_URL') . '?numero=' . $dni;
 
+        $response = \Illuminate\Support\Facades\Http::withToken($token)->get($url);
+
+        if ($response->successful()) {
+            return response()->json(array_merge(['status' => true], $response->json()));
+        }
+
+        return response()->json([
+            'status' => false,
+            'error' => 'DNI no encontrado o error en la API: ' . $response->body()
+        ]);
+    }
 }

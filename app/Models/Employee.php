@@ -14,6 +14,7 @@ class Employee extends Model
         'name',
         'job',
         'function',
+        'user_id',
         'deleted'
     ];
 
@@ -21,5 +22,10 @@ class Employee extends Model
 
     public function scopeActive($query){
         return $query->where('deleted', 0);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

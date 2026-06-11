@@ -114,7 +114,7 @@ class ProductController extends Controller
         $fpdf->AddFont('Montserrat', '');
         $fpdf->AddFont('Montserrat', 'B');
 
-        $fpdf->Image(asset('assets/images/logonew2.png'), 15, 15, 45);
+        $fpdf->Image(public_path('assets/images/logonew2.png'), 15, 15, 45);
 
         $fpdf->Ln(20);
 

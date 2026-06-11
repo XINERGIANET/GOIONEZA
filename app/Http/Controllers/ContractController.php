@@ -32,7 +32,7 @@ class ContractController extends Controller
             return $query->whereDate('event_date', '<=', $end_date);
         });
         $total = $contracts->sum('total');
-        $contracts = $contracts->paginate(20);
+        $contracts = $contracts->orderBy('id', 'desc')->paginate(20);
         $locations = Location::active()->get();
         $event_types = EventType::active()->get();
         $packages = Package::active()->get();
@@ -56,7 +56,7 @@ class ContractController extends Controller
             return $query->whereDate('debt_payment_date', '<=', $end_date);
         })->pending();
         $total = $contracts->sum('debt');
-        $contracts = $contracts->paginate(20);
+        $contracts = $contracts->orderBy('id', 'desc')->paginate(20);
         $payment_methods = PaymentMethod::all();
         return view('contracts.charges', compact('contracts', 'payment_methods', 'total'));
     }
@@ -65,11 +65,9 @@ class ContractController extends Controller
     {
 
         $validator = Validator::make($request->all(), [
-            'document' => 'required|integer',
-            'name' => 'required',
-            'business_document' => 'nullable|integer',
-            'phone' => 'nullable|integer',
-            'email' => 'nullable|email',
+            'clients' => 'required|array|min:1',
+            'clients.*.document' => 'required',
+            'clients.*.name' => 'required',
             'location_id' => 'required',
             'event_type_id' => 'required',
             'event_date' => 'required|date',
@@ -158,13 +156,16 @@ class ContractController extends Controller
         }
 
 
+        $first_client = $request->clients[0];
+
         $contract = Contract::create([
-            'document' => $request->document,
-            'name' => $request->name,
-            'business_document' => $request->business_document,
-            'business_name' => $request->business_name,
-            'phone' => $request->phone,
-            'email' => $request->email,
+            'document' => $first_client['document'],
+            'name' => $first_client['name'],
+            'business_document' => $first_client['business_document'] ?? null,
+            'business_name' => $first_client['business_name'] ?? null,
+            'phone' => $first_client['phone'] ?? null,
+            'email' => $first_client['email'] ?? null,
+            'clients' => json_encode($request->clients),
             'location_id' => $request->location_id,
             'event_type_id' => $request->event_type_id,
             'event_date' => $request->event_date,
@@ -208,6 +209,7 @@ class ContractController extends Controller
     {
         return response()->json([
             'id' => $contract->id,
+            'clients' => json_decode($contract->clients),
             'document' => $contract->document,
             'name' => $contract->name,
             'business_document' => $contract->business_document,
@@ -225,11 +227,9 @@ class ContractController extends Controller
     public function update(Request $request, Contract $contract)
     {
         $validator = Validator::make($request->all(), [
-            'document' => 'required|integer',
-            'name' => 'required',
-            'business_document' => 'nullable|integer',
-            'phone' => 'nullable|integer',
-            'email' => 'nullable|email',
+            'clients' => 'required|array|min:1',
+            'clients.*.document' => 'required',
+            'clients.*.name' => 'required',
             'location_id' => 'required',
             'event_type_id' => 'required',
             'people_number' => 'required|integer',
@@ -244,12 +244,15 @@ class ContractController extends Controller
             ]);
         }
 
-        $contract->document = $request->document;
-        $contract->name = $request->name;
-        $contract->business_document = $request->business_document;
-        $contract->business_name = $request->business_name;
-        $contract->phone = $request->phone;
-        $contract->email = $request->email;
+        $first_client = $request->clients[0];
+
+        $contract->document = $first_client['document'];
+        $contract->name = $first_client['name'];
+        $contract->business_document = $first_client['business_document'] ?? null;
+        $contract->business_name = $first_client['business_name'] ?? null;
+        $contract->phone = $first_client['phone'] ?? null;
+        $contract->email = $first_client['email'] ?? null;
+        $contract->clients = json_encode($request->clients);
         $contract->location_id = $request->location_id;
         $contract->event_type_id = $request->event_type_id;
         $contract->event_date = $request->event_date;
@@ -508,186 +511,156 @@ class ContractController extends Controller
     public function pdf(Contract $contract)
     {
         $fpdf = new Fpdf();
-
+        $fpdf->SetMargins(25, 25, 25);
         $fpdf->AddPage();
 
         $fpdf->AddFont('Montserrat', '');
         $fpdf->AddFont('Montserrat', 'B');
 
-        $fpdf->Image(asset('assets/images/logonew2.png'), 15, 15, 45);
-        $fpdf->Ln(20);
-
         $fpdf->SetFont('Montserrat', 'B', 14);
 
-        $fpdf->Cell(190, 5, 'CONTRATO DE EVENTO', 0, 1, 'C');
-
-        $fpdf->Ln();
-
-        $fpdf->SetFont('Montserrat', '', 12);
-
-        $fpdf->Cell(190, 5, 'Chiclayo, ' . $contract->date->format('d/m/Y'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->SetFont('Montserrat', 'B', 12);
-
-        $fpdf->Cell(95, 5, 'REUNIDAS AMBAS PARTES', 0, 0);
-
-        $fpdf->SetFont('Montserrat', 'B', 14);
-        $fpdf->Cell(95, 5, utf8_decode('CÓDIGO: ' . $contract->code), 0, 1, 'R');
-
-        $fpdf->Ln();
-
-        $fpdf->SetFont('Montserrat', '', 12);
-
-        $fpdf->Cell(190, 5, 'Como prestador del servicio:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('Sra Lidia Uceda Custodio con DNI 41927732 Domicilio en Chiclayo, Prolongación Pedro Cieza de León Sub Lt C6, Ref al costado del colegio ELIM Con teléfono 976715568.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'Como cliente:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('Sr.(a) ' . $contract->name . ' con DNI ' . $contract->document . ', teléfono ' . $contract->phone . '.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, utf8_decode('Ambas partes acuerdan celebrar el presente contrato con las siguientes:'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->SetFont('Montserrat', 'B', 12);
-
-        $fpdf->Cell(190, 5, utf8_decode('CLÁUSULAS'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->SetFont('Montserrat', '', 12);
-
-        $fpdf->Cell(190, 5, 'PRIMERA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('Por el presente contrato ambas partes acuerdan la celebración del evento en el Local "Quinta Fernandini", el ' . $contract->event_date->format('d/m/Y') . '; quedará reservado, el evento que tiene una capacidad de ' . $contract->people_number . ' con la duración de ' . $contract->event_duration . ' horas, desde las ' . optional($contract->event_time)->format('H:i a') . ' hasta ' . optional($contract->event_end)->format('H:i a')), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'SEGUNDA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('Los invitados serán un total de ' . $contract->people_number . ' adultos (los niños mayores a 3 años pagan cubierto)'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('Este podrá variar hasta 8 días hábiles antes de la fecha citada para la celebración del evento, en caso de sobrepasar los asistentes acordados se pagarán los cubiertos de los mismos con un 10% adicional por no haber sido comunicado.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('El precio del cubierto es S/' . number_format(optional($contract->package)->price, 2) . ' según el paquete  personalizado  haciendo un total S/' . number_format($contract->total, 2) . ' a la firma del contrato se entrega la suma de S/' . number_format($contract->initial_payment, 2) . ' quedando un saldo de S/' . number_format($contract->debt, 2) . ' soles que deben ser cancelados una semana antes del día evento.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'TERCERA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, utf8_decode('El prestador de servicios cubre las siguiente: Paquete personalizado'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode(optional($contract->package)->description), 0, 1);
-
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'CUARTA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('El cliente está en la obligación de pagar una garantía de S/500 por los servicios y suministros del local y en caso que no pase absolutamente nada la garantía será devuelta en un plazo de 7 días hábiles.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode("Costo de cristalería: \n - Vaso / copa larga o globo de cristal S/7 \n - Jarras/ hieleras/ ceniceros S/35  \n Botellas de cerveza S/5 \n - Puertas / espejos / adornos / floreros / mantel / servilletas se calculará según el daño ocurrido. \n - Luces lineales (algunas veces son los niños que manipulan) S/100"), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'QUINTA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode("En caso de deseo de servicios extras el cliente escoge en función de su interés los siguientes citados,\n - Mozo adicional S/120 \n - Hora adicional de servicios S/500 \n - Pantalla led (durante el evento) S/1200 \n - Hora loca Básica con Valdiviezo S/700"), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'SEXTA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode("El importe total del evento/banquete se abonará de la siguiente manera; un 10% a la firma inicial y acuerdo de dicho contrato; un 90% la semana antes de la realización del evento."), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'SEPTIMA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode("El caso de contratar proveedores de orquesta, este debe contar con un motor adecuado para su funcionamiento durante el evento, se prohíbe estrictamente usar la energía o punto de luz del local para la orquesta."), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, utf8_decode('Serán revisadas y deben contar con un buen cableado para evitar accidentes.'), 0, 1);
-
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'OCTAVA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('La política de cancelación del evento, no hay devolución del importe abonado para separación de la fecha, si fuera inferior a los días citados no existirá ningún tipo de retribución por parte de la empresa encargada de organizar el evento; en caso de no presentarse en el mismo día de la celebración tampoco existirá ningún tipo de devolución.'), 0, 1);
-
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'NOVENA:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('En caso se desperfectos en las instalaciones de la empresa se hará una previa valoración de estos con los encargados y si se atribuyen de daños graves los clientes deberán de pagarlos en su totalidad.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'ANEXO 1:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('En caso de ser EL CLIENTE los encargados de llevar servicios extras la empresa se exime de cualquier fallo técnico, pues serán ellos todos los responsables de sus actos.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'ANEXO 2:', 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->MultiCell(190, 5, utf8_decode('En caso que EL CLIENTE quiera encargarse de la cerveza deberá pagar un derecho de corcho libre 400 soles y 20 cajas permitidas, contratar un mozo y 100 soles por alquiler de congeladora.'), 0, 1);
-
-        $fpdf->Ln();
-
-        $fpdf->Cell(190, 5, 'Por todo ello, firman a dia ' . $contract->date->format('d/m/Y'), 0, 1);
-
-        $fpdf->Ln(40);
-
-        $fpdf->Cell(70, 5, 'CLIENTE', 'T', 0, 'C');
-        $fpdf->Cell(50, 5);
-        $fpdf->Cell(70, 5, 'PRESTADOR DE SERVICIOS', 'T', 0, 'C');
-
-
+        $fpdf->MultiCell(160, 6, utf8_decode('CONTRATO PARA EVENTO QUINTA FERNANDINI RECEPCIONES'), 0, 'C');
+
+        $fpdf->Ln(15);
+
+        $fpdf->SetFont('Montserrat', '', 11);
+        
+        $meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        $dia = $contract->date->format('d');
+        $mes = $meses[intval($contract->date->format('m')) - 1];
+        $anio = $contract->date->format('Y');
+
+        $fpdf->MultiCell(160, 6, utf8_decode("En Chiclayo, a los $dia días del mes de $mes del $anio"), 0, 'L');
+        $fpdf->Ln(6);
+
+        $fpdf->SetFont('Montserrat', 'U', 11);
+        $fpdf->Cell(160, 6, 'REUNIDAS AMBAS PARTES:', 0, 1);
+        $fpdf->Ln(2);
+
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->Cell(160, 6, 'Como prestador del servicio:', 0, 1);
+        $fpdf->Ln(2);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, utf8_decode('LIDIA UCEDA CUSTODIO'), 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('identificada con DNI N° 41927732, con domicilio en CALLE LOS DIAMANTES 151 - SECTOR GARITA - CARRETERA A PIMENTEL, (como referencia FRENTE AL CONTRY CLUB LOS ALGARROBOS), con número de celular 976715568 - 983865182.'), 0, 'J');
+        $fpdf->Ln(6);
+
+        $fpdf->Cell(160, 6, 'Como Cliente - Usuario:', 0, 1);
+        $fpdf->Ln(2);
+
+        // Extract multiple clients
+        $clientsArray = json_decode($contract->clients, true);
+        if (is_array($clientsArray) && count($clientsArray) > 0) {
+            $clientNames = [];
+            $clientDocs = [];
+            $clientPhones = [];
+            foreach ($clientsArray as $c) {
+                if(!empty($c['name'])) $clientNames[] = $c['name'];
+                if(!empty($c['document'])) $clientDocs[] = $c['document'];
+                if(!empty($c['phone'])) $clientPhones[] = $c['phone'];
+            }
+            $namesStr = count($clientNames) > 1 ? implode(', ', array_slice($clientNames, 0, -1)) . ' y ' . end($clientNames) : implode('', $clientNames);
+            $docsStr = count($clientDocs) > 1 ? implode(', ', array_slice($clientDocs, 0, -1)) . ' y ' . end($clientDocs) : implode('', $clientDocs);
+            $phonesStr = count($clientPhones) > 1 ? implode(', ', array_slice($clientPhones, 0, -1)) . ' y ' . end($clientPhones) : implode('', $clientPhones);
+        } else {
+            $namesStr = $contract->name;
+            $docsStr = $contract->document;
+            $phonesStr = $contract->phone;
+        }
+
+        $fpdf->MultiCell(160, 6, utf8_decode('La (El) Señora(r) ' . $namesStr . ', identificada(o) con DNI N° ' . $docsStr . ', y número de celular ' . $phonesStr . ', acuerdan celebrar un contrato para la realización de eventos en base a las siguientes cláusulas:'), 0, 'J');
+        $fpdf->Ln(6);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'PRIMERA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('Por el presente contrato el cliente manifiesta su necesidad de contratar los servicios de la prestadora del servicio para la realización de un evento consistente en la celebración del evento en el Local "Quinta Fernandini", el ' . $contract->event_date->format('d/m/Y') . '; quedará reservado el evento que tiene una capacidad de ' . $contract->people_number . ' personas con la duración de ' . $contract->event_duration . ' horas, desde las ' . optional($contract->event_time)->format('h:i a') . ' hasta las ' . optional($contract->event_end)->format('h:i a') . '.'), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'SEGUNDA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('Los invitados serán un total de ' . $contract->people_number . ' adultos (los niños mayores a 3 años pagan cubierto). Este número podrá variar hasta 8 días hábiles antes de la fecha citada para la celebración del evento. En caso de sobrepasar los asistentes acordados se pagarán los cubiertos de los mismos con un 10% adicional por no haber sido comunicado. El precio del cubierto es S/' . number_format(optional($contract->package)->price, 2) . ' según el paquete personalizado, haciendo un total de S/' . number_format($contract->total, 2) . '. A la firma del contrato se entrega la suma de S/' . number_format($contract->initial_payment, 2) . ' quedando un saldo de S/' . number_format($contract->debt, 2) . ' que debe ser cancelado una semana antes del día del evento.'), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'TERCERA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('El prestador de servicios cubre el siguiente paquete: ' . optional($contract->package)->name . '.'), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'CUARTA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('El cliente está en la obligación de pagar una garantía de S/500 por los servicios y suministros del local, y en caso de que no pase absolutamente nada, la garantía será devuelta en un plazo de 7 días hábiles.'), 0, 'J');
+        $fpdf->Ln(2);
+        $b = chr(149);
+        $text4 = utf8_decode("Costo de cristalería:\n") .
+                 "  $b " . utf8_decode("Vaso / copa larga o globo de cristal S/7.00\n") .
+                 "  $b " . utf8_decode("Jarras / hieleras / ceniceros S/35.00\n") .
+                 "  $b " . utf8_decode("Botellas de cerveza S/5.00\n") .
+                 "  $b " . utf8_decode("Puertas / espejos / adornos / floreros / mantel / servilletas se calculará según el daño ocurrido.\n") .
+                 "  $b " . utf8_decode("Luces lineales (algunas veces son los niños que las manipulan) S/100.00");
+        $fpdf->MultiCell(160, 6, $text4, 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'QUINTA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $text5 = utf8_decode("En caso de desear servicios extras, el cliente escoge en función de su interés los siguientes citados:\n") .
+                 "  $b " . utf8_decode("Mozo adicional S/120.00\n") .
+                 "  $b " . utf8_decode("Hora adicional de servicios S/500.00\n") .
+                 "  $b " . utf8_decode("Pantalla led (durante el evento) S/1200.00\n") .
+                 "  $b " . utf8_decode("Hora loca Básica con Valdiviezo S/700.00");
+        $fpdf->MultiCell(160, 6, $text5, 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'SEXTA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode("El importe total del evento/banquete se abonará de la siguiente manera: un 10% a la firma inicial y acuerdo de dicho contrato; un 90% la semana antes de la realización del evento."), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, utf8_decode('SÉPTIMA:'), 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode("En el caso de contratar proveedores de orquesta, este debe contar con un motor adecuado para su funcionamiento durante el evento, se prohíbe estrictamente usar la energía o punto de luz del local para la orquesta. Serán revisadas y deben contar con un buen cableado para evitar accidentes."), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'OCTAVA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('Respecto a la política de cancelación del evento, no hay devolución del importe abonado para separación de la fecha, si fuera inferior a los días citados no existirá ningún tipo de retribución por parte de la empresa encargada de organizar el evento; en caso de no presentarse en el mismo día de la celebración tampoco existirá ningún tipo de devolución.'), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'NOVENA:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('En caso de desperfectos en las instalaciones de la empresa se hará una previa valoración de estos con los encargados y si se atribuyen daños graves los clientes deberán de pagarlos en su totalidad.'), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'ANEXO 1:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('En caso de ser EL CLIENTE el encargado de llevar servicios extras, la empresa se exime de cualquier fallo técnico, pues serán ellos los únicos responsables de sus actos.'), 0, 'J');
+        $fpdf->Ln(4);
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(160, 6, 'ANEXO 2:', 0, 1);
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->MultiCell(160, 6, utf8_decode('En caso de que EL CLIENTE quiera encargarse de la cerveza, deberá pagar un derecho de corcho libre de S/400.00 y 20 cajas permitidas, además de contratar un mozo y abonar S/100.00 por alquiler de congeladora.'), 0, 'J');
+        $fpdf->Ln(15);
+
+        $fpdf->Cell(70, 5, '__________________________', 0, 0, 'C');
+        $fpdf->Cell(20, 5);
+        $fpdf->Cell(70, 5, '__________________________', 0, 1, 'C');
+
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->Cell(70, 5, 'EL CLIENTE', 0, 0, 'C');
+        $fpdf->Cell(20, 5);
+        $fpdf->Cell(70, 5, 'LA PRESTADORA', 0, 1, 'C');
 
         $filename = 'Contrato_' . $contract->id . '.pdf';
 
@@ -703,7 +676,7 @@ class ContractController extends Controller
         $fpdf->AddFont('Montserrat', '');
         $fpdf->AddFont('Montserrat', 'B');
 
-        $fpdf->Image(asset('assets/images/logonew2.png'), 85, 15, 45);
+        $fpdf->Image(public_path('assets/images/logonew2.png'), 85, 15, 45);
 
         $fpdf->Ln(30);
 

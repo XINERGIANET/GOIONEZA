@@ -16,7 +16,12 @@
 			<button class="btn btn-red" data-bs-toggle="modal" data-bs-target="#createModal">
 				<i class="ti ti-plus icon"></i> Crear nuevo
 			</button>
-			<a href="{{ route('products.pdf') }}" class="btn btn-success" target="_blank"><i class="ti ti-download icon"></i> PDF</a>
+			<a href="{{ route('export', ['module' => 'products', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'products', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div>
 			<form>
@@ -74,19 +79,19 @@
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
-								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $product->id }}">
+								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $product->id }}" data-bs-toggle="tooltip" title="Editar">
 									<i class="ti ti-pencil icon"></i>
 								</button>
-								<button class="btn btn-icon btn-dark btn-decrement" data-id="{{ $product->id }}">
+								<button class="btn btn-icon btn-dark btn-decrement" data-id="{{ $product->id }}" data-bs-toggle="tooltip" title="Disminuir stock">
 									<i class="ti ti-minus icon"></i>
 								</button>
-								<button class="btn btn-icon btn-dark btn-increment" data-id="{{ $product->id }}">
+								<button class="btn btn-icon btn-dark btn-increment" data-id="{{ $product->id }}" data-bs-toggle="tooltip" title="Aumentar stock">
 									<i class="ti ti-plus icon"></i>
 								</button>
-								<button class="btn btn-icon btn-primary btn-movements" data-id="{{ $product->id }}">
+								<button class="btn btn-icon btn-primary btn-movements" data-id="{{ $product->id }}" data-bs-toggle="tooltip" title="Movimientos">
 									<i class="ti ti-truck icon"></i>
 								</button>
-								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $product->id }}">
+								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $product->id }}" data-bs-toggle="tooltip" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
 							</div>

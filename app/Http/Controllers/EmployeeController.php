@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\Employee;
+use App\Models\User;
 
 class EmployeeController extends Controller
 {
@@ -30,7 +31,33 @@ class EmployeeController extends Controller
             ]);
         }
 
-        Employee::create($request->all());
+        $data = $request->all();
+
+        if ($request->has_user) {
+            $userValidator = Validator::make($request->all(), [
+                'username' => 'required|unique:users,user',
+                'role' => 'required',
+                'password' => 'required'
+            ]);
+
+            if($userValidator->fails()){
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Usuario: ' . $userValidator->errors()->first()
+                ]);
+            }
+
+            $user = User::create([
+                'name' => $request->name,
+                'user' => $request->username,
+                'role' => $request->role,
+                'password' => bcrypt($request->password)
+            ]);
+
+            $data['user_id'] = $user->id;
+        }
+
+        Employee::create($data);
 
         return response()->json([
             'status' => true
@@ -38,6 +65,7 @@ class EmployeeController extends Controller
     }
 
     public function edit(Request $request, Employee $employee){
+        $employee->load('user');
         return response()->json($employee);
     }
 
@@ -54,7 +82,50 @@ class EmployeeController extends Controller
             ]);
         }
 
-        $employee->update($request->all());
+        $data = $request->all();
+
+        if ($request->has_user) {
+            $userValidator = Validator::make($request->all(), [
+                'username' => 'required|unique:users,user,' . optional($employee->user)->id,
+                'role' => 'required'
+            ]);
+
+            if($userValidator->fails()){
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Usuario: ' . $userValidator->errors()->first()
+                ]);
+            }
+
+            if ($employee->user) {
+                $employee->user->update([
+                    'name' => $request->name,
+                    'user' => $request->username,
+                    'role' => $request->role,
+                ]);
+                if ($request->password) {
+                    $employee->user->update([
+                        'password' => bcrypt($request->password)
+                    ]);
+                }
+            } else {
+                if (!$request->password) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Usuario: La contraseña es requerida'
+                    ]);
+                }
+                $user = User::create([
+                    'name' => $request->name,
+                    'user' => $request->username,
+                    'role' => $request->role,
+                    'password' => bcrypt($request->password)
+                ]);
+                $data['user_id'] = $user->id;
+            }
+        }
+
+        $employee->update($data);
 
         return response()->json([
             'status' => true

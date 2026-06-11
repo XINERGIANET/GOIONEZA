@@ -15,6 +15,12 @@
 			<button class="btn btn-red" data-bs-toggle="modal" data-bs-target="#createModal">
 				<i class="ti ti-plus icon"></i> Crear nuevo
 			</button>
+			<a href="{{ route('export', ['module' => 'employees', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'employees', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div>
 			<form>
@@ -49,10 +55,10 @@
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
-								<button class="btn btn-icon btn-primary btn-edit" data-id="{{ $employee->id }}">
+								<button class="btn btn-icon btn-primary btn-edit" data-id="{{ $employee->id }}" data-bs-toggle="tooltip" title="Editar">
 									<i class="ti ti-pencil icon"></i>
 								</button>
-								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $employee->id }}">
+								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $employee->id }}" data-bs-toggle="tooltip" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
 							</div>
@@ -88,13 +94,18 @@
 						<div class="col-lg-6">
 							<div class="mb-3">
 								<label class="form-label required">DNI</label>
-								<input type="text" class="form-control" name="document" autocomplete="off">
+								<div class="input-group">
+									<input type="text" class="form-control" name="document" id="createDocument" autocomplete="off">
+									<button class="btn btn-outline-secondary btn-search-dni" type="button" data-target="create">
+										<i class="ti ti-search icon"></i>
+									</button>
+								</div>
 							</div>
 						</div>
 						<div class="col-lg-6">
 							<div class="mb-3">
 								<label class="form-label required">Nombre</label>
-								<input type="text" class="form-control" name="name" autocomplete="off">
+								<input type="text" class="form-control" name="name" id="createName" autocomplete="off">
 							</div>
 						</div>
 						<div class="col-lg-6">
@@ -107,6 +118,43 @@
 							<div class="mb-3">
 								<label class="form-label">Función</label>
 								<input type="text" class="form-control" name="function" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-lg-12">
+							<hr>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" value="1" name="has_user" id="checkHasUser">
+								<label class="form-check-label" for="checkHasUser">
+									Asignar acceso al sistema (Crear usuario)
+								</label>
+							</div>
+						</div>
+						<div class="col-lg-12" id="userFields" style="display: none;">
+							<div class="row">
+								<div class="col-lg-4">
+									<div class="mb-3">
+										<label class="form-label required">Usuario</label>
+										<input type="text" class="form-control" name="username" autocomplete="off">
+									</div>
+								</div>
+								<div class="col-lg-4">
+									<div class="mb-3">
+										<label class="form-label required">Contraseña</label>
+										<input type="password" class="form-control" name="password" autocomplete="new-password">
+									</div>
+								</div>
+								<div class="col-lg-4">
+									<div class="mb-3">
+										<label class="form-label required">Rol en sistema</label>
+										<select class="form-select" name="role">
+											<option value="">Seleccione</option>
+											<option value="admin">Administrador</option>
+											<option value="ventas">Ventas</option>
+											<option value="compras">Compras / Finanzas</option>
+											<option value="almacen">Almacén</option>
+										</select>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -133,7 +181,12 @@
 						<div class="col-lg-6">
 							<div class="mb-3">
 								<label class="form-label required">DNI</label>
-								<input type="text" class="form-control" name="document" id="editDocument" autocomplete="off">
+								<div class="input-group">
+									<input type="text" class="form-control" name="document" id="editDocument" autocomplete="off">
+									<button class="btn btn-outline-secondary btn-search-dni" type="button" data-target="edit">
+										<i class="ti ti-search icon"></i>
+									</button>
+								</div>
 							</div>
 						</div>
 						<div class="col-lg-6">
@@ -154,6 +207,43 @@
 								<input type="text" class="form-control" name="function" id="editFunction" autocomplete="off">
 							</div>
 						</div>
+						<div class="col-lg-12">
+							<hr>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" value="1" name="has_user" id="editCheckHasUser">
+								<label class="form-check-label" for="editCheckHasUser">
+									Asignar acceso al sistema (Crear usuario)
+								</label>
+							</div>
+						</div>
+						<div class="col-lg-12" id="editUserFields" style="display: none;">
+							<div class="row">
+								<div class="col-lg-4">
+									<div class="mb-3">
+										<label class="form-label required">Usuario</label>
+										<input type="text" class="form-control" name="username" id="editUsername" autocomplete="off">
+									</div>
+								</div>
+								<div class="col-lg-4">
+									<div class="mb-3">
+										<label class="form-label">Contraseña <small>(dejar vacío para no cambiar)</small></label>
+										<input type="password" class="form-control" name="password" autocomplete="new-password">
+									</div>
+								</div>
+								<div class="col-lg-4">
+									<div class="mb-3">
+										<label class="form-label required">Rol en sistema</label>
+										<select class="form-select" name="role" id="editRole">
+											<option value="">Seleccione</option>
+											<option value="admin">Administrador</option>
+											<option value="ventas">Ventas</option>
+											<option value="compras">Compras / Finanzas</option>
+											<option value="almacen">Almacén</option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -169,6 +259,22 @@
 
 @section('scripts')
 <script>
+
+	$('#checkHasUser').change(function(){
+		if($(this).is(':checked')){
+			$('#userFields').show();
+		}else{
+			$('#userFields').hide();
+		}
+	});
+
+	$('#editCheckHasUser').change(function(){
+		if($(this).is(':checked')){
+			$('#editUserFields').show();
+		}else{
+			$('#editUserFields').hide();
+		}
+	});
 
 	$('#storeForm').submit(function(e){
 		e.preventDefault();
@@ -209,6 +315,19 @@
 				$('#editJob').val(data.job);
 				$('#editFunction').val(data.function);
 				$('#editId').val(data.id);
+				
+				if(data.user) {
+					$('#editCheckHasUser').prop('checked', true);
+					$('#editUserFields').show();
+					$('#editUsername').val(data.user.user);
+					$('#editRole').val(data.user.role);
+				} else {
+					$('#editCheckHasUser').prop('checked', false);
+					$('#editUserFields').hide();
+					$('#editUsername').val('');
+					$('#editRole').val('');
+				}
+
 				$('#editModal').modal('show');
 			},
 			error: function(err){
@@ -272,9 +391,46 @@
 
 		});
 
-			
+	});
 
+	$('.btn-search-dni').click(function(){
+		var target = $(this).data('target');
+		var dni = target == 'create' ? $('#createDocument').val() : $('#editDocument').val();
+		var btn = $(this);
 
+		if(dni.length != 8){
+			ToastError.fire({ text: 'El DNI debe tener 8 dígitos' });
+			return;
+		}
+
+		btn.prop('disabled', true);
+		btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+
+		$.ajax({
+			url: '{{ route('search.dni') }}',
+			method: 'GET',
+			data: { numero: dni },
+			success: function(data){
+				btn.prop('disabled', false);
+				btn.html('<i class="ti ti-search icon"></i>');
+
+				if(data.status){
+					var fullName = data.nombres + ' ' + data.apellidoPaterno + ' ' + data.apellidoMaterno;
+					if (target == 'create') {
+						$('#createName').val(fullName);
+					} else {
+						$('#editName').val(fullName);
+					}
+				}else{
+					ToastError.fire({ text: data.error ? data.error : 'Ocurrió un error' });
+				}
+			},
+			error: function(err){
+				btn.prop('disabled', false);
+				btn.html('<i class="ti ti-search icon"></i>');
+				ToastError.fire({ text: 'Ocurrió un error en la conexión' });
+			}
+		});
 	});
 
 </script>

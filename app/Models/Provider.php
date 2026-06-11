@@ -14,6 +14,7 @@ class Provider extends Model
         'name',
         'phone',
         'email',
+        'service',
         'deleted'
     ];
 

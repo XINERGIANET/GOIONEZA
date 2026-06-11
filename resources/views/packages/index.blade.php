@@ -16,6 +16,12 @@
 			<button class="btn btn-red" data-bs-toggle="modal" data-bs-target="#createModal">
 				<i class="ti ti-plus icon"></i> Crear nuevo
 			</button>
+			<a href="{{ route('export', ['module' => 'packages', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'packages', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div>
 			<form>
@@ -46,10 +52,10 @@
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
-								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $package->id }}">
+								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $package->id }}" data-bs-toggle="tooltip" title="Editar">
 									<i class="ti ti-pencil icon"></i>
 								</button>
-								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $package->id }}">
+								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $package->id }}" data-bs-toggle="tooltip" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
 							</div>

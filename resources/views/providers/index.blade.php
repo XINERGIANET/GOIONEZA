@@ -15,6 +15,12 @@
 			<button class="btn btn-red" data-bs-toggle="modal" data-bs-target="#createModal">
 				<i class="ti ti-plus icon"></i> Crear nuevo
 			</button>
+			<a href="{{ route('export', ['module' => 'providers', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'providers', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div>
 			<form>
@@ -35,6 +41,7 @@
 					<th>Nombre</th>
 					<th>Teléfono</th>
 					<th>Correo electrónico</th>
+					<th>Rubro / Servicio</th>
 					<th>Acción</th>
 				</tr>
 			</thead>
@@ -46,13 +53,14 @@
 					<td>{{ $provider->name }}</td>
 					<td>{{ $provider->phone }}</td>
 					<td>{{ $provider->email }}</td>
+					<td>{{ $provider->service }}</td>
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
-								<button class="btn btn-icon btn-primary btn-edit" data-id="{{ $provider->id }}">
+								<button class="btn btn-icon btn-primary btn-edit" data-id="{{ $provider->id }}" data-bs-toggle="tooltip" title="Editar">
 									<i class="ti ti-pencil icon"></i>
 								</button>
-								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $provider->id }}">
+								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $provider->id }}" data-bs-toggle="tooltip" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
 							</div>
@@ -62,7 +70,7 @@
 				@endforeach
 				@else
 				<tr>
-					<td colspan="5" align="center">No se han encontrado resultados</td>
+					<td colspan="6" align="center">No se han encontrado resultados</td>
 				</tr>
 				@endif
 			</tbody>
@@ -109,6 +117,12 @@
 								<input type="text" class="form-control" name="email" autocomplete="off">
 							</div>
 						</div>
+						<div class="col-lg-12">
+							<div class="mb-3">
+								<label class="form-label">Rubro / Servicio que ofrece</label>
+								<input type="text" class="form-control" name="service" autocomplete="off">
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -152,6 +166,12 @@
 							<div class="mb-3">
 								<label class="form-label">Correo electrónico</label>
 								<input type="text" class="form-control" name="email" id="editEmail" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-lg-12">
+							<div class="mb-3">
+								<label class="form-label">Rubro / Servicio que ofrece</label>
+								<input type="text" class="form-control" name="service" id="editService" autocomplete="off">
 							</div>
 						</div>
 					</div>
@@ -208,6 +228,7 @@
 				$('#editName').val(data.name);
 				$('#editPhone').val(data.phone);
 				$('#editEmail').val(data.email);
+				$('#editService').val(data.service);
 				$('#editId').val(data.id);
 				$('#editModal').modal('show');
 			},

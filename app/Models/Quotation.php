@@ -16,11 +16,13 @@ class Quotation extends Model
         'people_number',
         'event_date',
         'answer_date',
+        'visit_date',
+        'observations',
         'date',
         'deleted'
     ];
 
-    protected $dates = ['event_date', 'answer_date', 'date'];
+    protected $dates = ['event_date', 'answer_date', 'visit_date', 'date'];
     
     public $timestamps = false;
 

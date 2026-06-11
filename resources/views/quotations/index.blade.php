@@ -16,6 +16,12 @@
 			<button class="btn btn-red" data-bs-toggle="modal" data-bs-target="#createModal">
 				<i class="ti ti-plus icon"></i> Crear nuevo
 			</button>
+			<a href="{{ route('export', ['module' => 'quotations', 'format' => 'pdf']) }}" class="btn btn-outline-danger" target="_blank" data-bs-toggle="tooltip" title="Exportar a PDF">
+				<i class="ti ti-file-type-pdf icon"></i> PDF
+			</a>
+			<a href="{{ route('export', ['module' => 'quotations', 'format' => 'excel']) }}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Exportar a Excel">
+				<i class="ti ti-file-spreadsheet icon"></i> Excel
+			</a>
 		</div>
 		<div>
 			<form>
@@ -56,13 +62,13 @@
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
-								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $quotation->id }}">
+								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $quotation->id }}" data-bs-toggle="tooltip" title="Editar">
 									<i class="ti ti-pencil icon"></i>
 								</button>
 								<a href="{{ route('quotations.pdf', $quotation) }}" class="btn btn-icon btn-primary" target="_blank" title="PDF">
 									<i class="ti ti-file-invoice icon"></i>
 								</a>
-								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $quotation->id }}">
+								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $quotation->id }}" data-bs-toggle="tooltip" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
 							</div>
@@ -126,14 +132,32 @@
   			  	</div>
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
+  			  			<label class="form-label required">Fecha de cotización</label>
+  			  			<input type="date" class="form-control" name="date" value="{{ date('Y-m-d') }}">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-6">
+  			  		<div class="mb-3">
   			  			<label class="form-label required">Fecha de evento</label>
   			  			<input type="date" class="form-control" name="event_date">
   			  		</div>
   			  	</div>
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
+  			  			<label class="form-label">Fecha de visita</label>
+  			  			<input type="date" class="form-control" name="visit_date">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-6">
+  			  		<div class="mb-3">
   			  			<label class="form-label required">Fecha de respuesta</label>
   			  			<input type="date" class="form-control" name="answer_date">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-12">
+  			  		<div class="mb-3">
+  			  			<label class="form-label">Observaciones</label>
+  			  			<textarea class="form-control" name="observations" rows="3"></textarea>
   			  		</div>
   			  	</div>
   			  </div>
@@ -188,14 +212,32 @@
   			  	</div>
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
+  			  			<label class="form-label required">Fecha de cotización</label>
+  			  			<input type="date" class="form-control" name="date" id="editDate">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-6">
+  			  		<div class="mb-3">
   			  			<label class="form-label required">Fecha de evento</label>
   			  			<input type="date" class="form-control" name="event_date" id="editEventDate">
   			  		</div>
   			  	</div>
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
+  			  			<label class="form-label">Fecha de visita</label>
+  			  			<input type="date" class="form-control" name="visit_date" id="editVisitDate">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-6">
+  			  		<div class="mb-3">
   			  			<label class="form-label required">Fecha de respuesta</label>
   			  			<input type="date" class="form-control" name="answer_date" id="editAnswerDate">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-12">
+  			  		<div class="mb-3">
+  			  			<label class="form-label">Observaciones</label>
+  			  			<textarea class="form-control" name="observations" id="editObservations" rows="3"></textarea>
   			  		</div>
   			  	</div>
   			  </div>
@@ -251,8 +293,11 @@
 				$('#editPhone').val(data.phone);
 				$('#editPackageId').val(data.package_id);
 				$('#editPeopleNumber').val(data.people_number);
+				$('#editDate').val(data.date);
 				$('#editEventDate').val(data.event_date);
+				$('#editVisitDate').val(data.visit_date);
 				$('#editAnswerDate').val(data.answer_date);
+				$('#editObservations').val(data.observations);
 				$('#editId').val(data.id);
 				$('#editModal').modal('show');
 			},
