@@ -362,6 +362,7 @@ class ContractController extends Controller
             $contract->update([
                 'deleted' => 1
             ]);
+            $contract->delete();
 
             return response()->json([
                 'status' => true

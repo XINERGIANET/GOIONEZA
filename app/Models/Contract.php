@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contract extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'code',
@@ -45,7 +46,7 @@ class Contract extends Model
     public $timestamps = false;
 
     public function scopeActive($query){
-        return $query->where('deleted', 0);
+        return $query; // SoftDeletes handles the filtering natively now
     }
 
     public function scopePending($query){
