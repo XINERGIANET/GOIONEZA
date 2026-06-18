@@ -21,7 +21,8 @@ class PaymentScheduleController extends Controller
         $validator = Validator::make($request->all(), [
             'description' => 'required',
             'amount' => 'required|numeric',
-            'day' => 'required|integer|between:1,31'
+            'day' => 'required|string',
+            'deadline_date' => 'nullable|date'
         ]);
 
         if($validator->fails()){
@@ -46,7 +47,8 @@ class PaymentScheduleController extends Controller
         $validator = Validator::make($request->all(), [
             'description' => 'required',
             'amount' => 'required|numeric',
-            'day' => 'required|integer|between:1,31'
+            'day' => 'required|string',
+            'deadline_date' => 'nullable|date'
         ]);
 
         if($validator->fails()){

@@ -15,6 +15,7 @@ use App\Models\PaymentMethod;
 use App\Models\Extra;
 use App\Models\Employee;
 use App\Models\Payment;
+use App\Models\Expense;
 
 class ContractController extends Controller
 {
@@ -39,7 +40,8 @@ class ContractController extends Controller
         $extras = Extra::active()->get();
         $employees = Employee::active()->get();
         $payment_methods = PaymentMethod::all();
-        return view('contracts.index', compact('contracts', 'locations', 'event_types', 'packages', 'extras', 'employees', 'payment_methods', 'total'));
+        $commissions = \App\Models\Commission::all();
+        return view('contracts.index', compact('contracts', 'locations', 'event_types', 'packages', 'extras', 'employees', 'payment_methods', 'total', 'commissions'));
     }
 
     public function charges(Request $request)
@@ -184,11 +186,29 @@ class ContractController extends Controller
             'date' => now(),
             'debt' => $debt,
             'debt_payment_date' => $request->debt_payment_date,
-            'paid' => $paid
+            'paid' => $paid,
+            'commission_id' => $request->has_commission ? $request->commission_id : null,
+            'commission_amount' => $request->has_commission ? $request->commission_amount : null
         ]);
 
         $code = 'C-' . str_pad($contract->id, 3, '0', STR_PAD_LEFT);
         $contract->update(['code' => $code]);
+
+        if ($request->has_commission && $request->commission_id && $request->commission_amount) {
+            $commissionModel = \App\Models\Commission::find($request->commission_id);
+            Expense::create([
+                'contract_id' => $contract->id,
+                'description' => 'Comisión por contrato ' . $code,
+                'responsible' => auth()->user()->name ?? 'Sistema',
+                'voucher' => 'Ticket',
+                'voucher_number' => '-',
+                'provider' => $commissionModel ? $commissionModel->names : 'Comisión',
+                'amount' => $request->commission_amount,
+                'payment_method_id' => $request->payment_method_id,
+                'date' => now(),
+                'deleted' => 0
+            ]);
+        }
 
         if ($request->payment_type == 'Contado') {
             Payment::create([

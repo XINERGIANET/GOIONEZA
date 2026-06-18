@@ -40,7 +40,8 @@
 				<tr>
 					<th>Descripción</th>
 					<th>Monto</th>
-					<th>Día</th>
+					<th>Frecuencia</th>
+					<th>Fecha límite</th>
 					<th>Acción</th>
 				</tr>
 			</thead>
@@ -51,6 +52,7 @@
 					<td>{{ $payment_schedule->description }}</td>
 					<td>{{ $payment_schedule->amount }}</td>
 					<td>{{ $payment_schedule->day }}</td>
+					<td>{{ $payment_schedule->deadline_date ? \Carbon\Carbon::parse($payment_schedule->deadline_date)->format('d/m/Y') : '-' }}</td>
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
@@ -67,7 +69,7 @@
 				@endforeach
 				@else
 				<tr>
-					<td colspan="4" align="center">No se han encontrado resultados</td>
+					<td colspan="5" align="center">No se han encontrado resultados</td>
 				</tr>
 				@endif
 			</tbody>
@@ -104,8 +106,14 @@
   			  	</div>
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
-  			  			<label class="form-label required">Día</label>
+  			  			<label class="form-label required">Frecuencia</label>
   			  			<input type="text" class="form-control" name="day" autocomplete="off">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-6">
+  			  		<div class="mb-3">
+  			  			<label class="form-label">Fecha límite</label>
+  			  			<input type="date" class="form-control" name="deadline_date">
   			  		</div>
   			  	</div>
   			  </div>
@@ -143,8 +151,14 @@
   			  	</div>
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
-  			  			<label class="form-label required">Día</label>
+  			  			<label class="form-label required">Frecuencia</label>
   			  			<input type="text" class="form-control" name="day" id="editDay" autocomplete="off">
+  			  		</div>
+  			  	</div>
+  			  	<div class="col-lg-6">
+  			  		<div class="mb-3">
+  			  			<label class="form-label">Fecha límite</label>
+  			  			<input type="date" class="form-control" name="deadline_date" id="editDeadlineDate">
   			  		</div>
   			  	</div>
   			  </div>
@@ -199,6 +213,7 @@
 				$('#editDescription').val(data.description);
 				$('#editAmount').val(data.amount);
 				$('#editDay').val(data.day);
+				$('#editDeadlineDate').val(data.deadline_date ? data.deadline_date.split(' ')[0] : '');
 				$('#editId').val(data.id);
 				$('#editModal').modal('show');
 			},

@@ -13,8 +13,11 @@ class PaymentSchedule extends Model
         'description',
         'amount',
         'day',
-        'deleted'
+        'deleted',
+        'deadline_date'
     ];
+
+    protected $dates = ['deadline_date'];
 
     public $timestamps = false;
 

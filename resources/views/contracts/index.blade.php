@@ -332,6 +332,33 @@
   			  		  </table>
   			  		</div>
   			  	</div>
+  			  	<div class="col-lg-12">
+  			  		<div class="card mb-3">
+  			  			<div class="card-body py-2">
+  			  				<div class="form-check mb-2">
+							  <input class="form-check-input" type="checkbox" id="chkCommission" name="has_commission" value="1">
+							  <label class="form-check-label" for="chkCommission">
+							    Agregar Comisión
+							  </label>
+							</div>
+							<div class="row d-none" id="commissionFields">
+								<div class="col-lg-6">
+									<label class="form-label required">Comisionista</label>
+									<select class="form-select" name="commission_id">
+										<option value="">Seleccionar</option>
+										@foreach($commissions as $commission)
+										<option value="{{ $commission->id }}">{{ $commission->names }} ({{ $commission->dni }})</option>
+										@endforeach
+									</select>
+								</div>
+								<div class="col-lg-6">
+									<label class="form-label required">Monto de comisión</label>
+									<input type="text" class="form-control" name="commission_amount" value="0.00" autocomplete="off">
+								</div>
+							</div>
+  			  			</div>
+  			  		</div>
+  			  	</div>
   			  	<div class="col-lg-4">
   			  		<div class="mb-3">
   			  			<label class="form-label required">Tipo de descuento</label>
@@ -675,6 +702,14 @@
 		if(parametros.get('modal') == 'create'){
 			$('#createModal').modal('show');
 		}
+
+		$('#chkCommission').change(function(){
+			if($(this).is(':checked')){
+				$('#commissionFields').removeClass('d-none');
+			} else {
+				$('#commissionFields').addClass('d-none');
+			}
+		});
 	});
 
 	let clientIndex = 0;

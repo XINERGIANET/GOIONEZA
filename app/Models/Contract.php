@@ -38,7 +38,9 @@ class Contract extends Model
         'debt',
         'debt_payment_date',
         'paid',
-        'deleted'
+        'deleted',
+        'commission_id',
+        'commission_amount'
     ];
 
     protected $dates = ['event_date', 'event_time', 'event_end', 'date', 'debt_payment_date'];
@@ -71,5 +73,9 @@ class Contract extends Model
 
     public function payments(){
         return $this->hasMany(Payment::class);
+    }
+
+    public function commission(){
+        return $this->belongsTo(Commission::class);
     }
 }
