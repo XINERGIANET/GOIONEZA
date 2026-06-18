@@ -39,7 +39,7 @@ class ContractController extends Controller
         $packages = Package::active()->get();
         $extras = Extra::active()->get();
         $employees = Employee::active()->get();
-        $payment_methods = PaymentMethod::all();
+        $payment_methods = PaymentMethod::where('name', 'not like', '%(Inactivo)%')->get();
         $commissions = \App\Models\Commission::all();
         return view('contracts.index', compact('contracts', 'locations', 'event_types', 'packages', 'extras', 'employees', 'payment_methods', 'total', 'commissions'));
     }
@@ -59,7 +59,7 @@ class ContractController extends Controller
         })->pending();
         $total = $contracts->sum('debt');
         $contracts = $contracts->orderBy('id', 'desc')->paginate(20);
-        $payment_methods = PaymentMethod::all();
+        $payment_methods = PaymentMethod::where('name', 'not like', '%(Inactivo)%')->get();
         return view('contracts.charges', compact('contracts', 'payment_methods', 'total'));
     }
 

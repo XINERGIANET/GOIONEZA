@@ -29,7 +29,7 @@ class PurchaseController extends Controller
 
         $expense_types = ExpenseType::active()->get();
         
-        $payment_methods = PaymentMethod::all();
+        $payment_methods = PaymentMethod::where('name', 'not like', '%(Inactivo)%')->get();
 
         return view('purchases.index', compact('purchases', 'expense_types', 'payment_methods', 'total'));
     }

@@ -24,7 +24,7 @@ class ExpenseController extends Controller
         $expenses = $expenses->paginate(20);
 
         $contracts = Contract::active()->get();
-        $payment_methods = PaymentMethod::all();
+        $payment_methods = PaymentMethod::where('name', 'not like', '%(Inactivo)%')->get();
         return view('expenses.index', compact('expenses', 'contracts', 'payment_methods', 'total'));
     }
 

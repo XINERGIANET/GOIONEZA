@@ -19,7 +19,7 @@ class IncomeController extends Controller
         })->paginate(10);
 
         $income_types = IncomeType::active()->get();
-        $payment_methods = PaymentMethod::all();
+        $payment_methods = PaymentMethod::where('name', 'not like', '%(Inactivo)%')->get();
         $locations = Location::active()->get();
 
         return view('incomes.index', compact('incomes', 'income_types', 'payment_methods', 'locations'));
