@@ -118,21 +118,47 @@ class WebController extends Controller
         $contracts = Contract::with('package', 'event_type')->active()->whereDate('event_date', '>=', $request->start)->whereDate('event_date', '<=', $request->end)->get();
         $events = $contracts->map(function ($contract) {
             return [
-            'id' => $contract->id,
-            'title' => 'Evento',
+            'id' => 'contract_'.$contract->id,
+            'title' => 'Contrato',
             'start' => $contract->event_date->format('Y-m-d'),
             'end' => $contract->event_date->format('Y-m-d'),
             'name' => $contract->name,
             'package' => optional($contract->package)->name,
             'people_number' => $contract->people_number,
             'event_date' => $contract->event_date->format('d/m/Y'),
-            'event_time' => $contract->event_time->format('H:i'),
+            'event_time' => $contract->event_time ? $contract->event_time->format('H:i') : '',
             'event_type' => optional($contract->event_type)->name,
-            'location' => optional($contract->location)->name
+            'location' => optional($contract->location)->name,
+            'color' => '#28a745',
+            'is_quotation' => false
             ];
         });
 
-        return response()->json($events);
+        $quotations = \App\Models\Quotation::with('package')->active()->whereNotNull('visit_date')->whereDate('visit_date', '>=', $request->start)->whereDate('visit_date', '<=', $request->end)->get();
+        $visit_events = $quotations->map(function ($quotation) {
+            return [
+            'id' => 'quotation_'.$quotation->id,
+            'title' => 'Visita',
+            'start' => $quotation->visit_date->format('Y-m-d'),
+            'end' => $quotation->visit_date->format('Y-m-d'),
+            'name' => $quotation->name,
+            'package' => optional($quotation->package)->name,
+            'people_number' => $quotation->people_number,
+            'event_date' => $quotation->event_date ? $quotation->event_date->format('d/m/Y') : '',
+            'event_time' => '',
+            'event_type' => '',
+            'location' => '',
+            'visit_date' => $quotation->visit_date->format('d/m/Y'),
+            'phone' => $quotation->phone,
+            'color' => '#ffc107',
+            'textColor' => '#000000',
+            'is_quotation' => true
+            ];
+        });
+
+        $all_events = $events->concat($visit_events);
+
+        return response()->json($all_events);
     }
 
     public function cash_flow()
