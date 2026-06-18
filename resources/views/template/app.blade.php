@@ -102,6 +102,9 @@
 										<a class="dropdown-item" href="{{ route('employees.index') }}">
 											Personal
 										</a>
+										<a class="dropdown-item" href="{{ route('commissions.index') }}">
+											Comisiones
+										</a>
 										<a class="dropdown-item" href="{{ route('income_types.index') }}">
 											Ingreso (categorías)
 										</a>

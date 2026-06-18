@@ -11,6 +11,7 @@ use App\Http\Controllers\ExtraController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\PaymentScheduleController;
 use App\Http\Controllers\IncomeTypeController;
@@ -57,6 +58,8 @@ Route::middleware('auth')->group(function(){
 	Route::resource('providers', ProviderController::class);
 	
 	Route::resource('employees', EmployeeController::class);
+	
+	Route::resource('commissions', CommissionController::class);
 	
 	Route::resource('income_types', IncomeTypeController::class);
 	
