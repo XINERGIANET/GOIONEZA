@@ -89,7 +89,7 @@
 				@if($expenses->count() > 0)
 				@foreach($expenses as $expense)
 				<tr>
-					<td>{{ optional($expense->contract)->name.' - '.optional(optional($expense->contract)->package)->name.' - '.optional($expense->contract)->date->format('d/m/Y') }}</td>
+					<td>{{ optional($expense->contract)->name.' - '.optional(optional($expense->contract)->package)->name.' - '.optional(optional($expense->contract)->date)->format('d/m/Y') }}</td>
 					<td>{{ $expense->description }}</td>
 					<td>{{ $expense->responsible }}</td>
 					<td>{{ $expense->voucher }}</td>
@@ -97,7 +97,7 @@
 					<td>{{ $expense->provider }}</td>
 					<td>{{ $expense->amount }}</td>
 					<td>{{ optional($expense->payment_method)->name }}</td>
-					<td>{{ $expense->date->format('d/m/Y') }}</td>
+					<td>{{ optional($expense->date)->format('d/m/Y') }}</td>
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
@@ -143,7 +143,7 @@
   			  			<select class="form-select" name="contract_id">
   			  				<option value="">Seleccionar</option>
   			  				@foreach($contracts as $contract)
-  			  				<option value="{{ $contract->id }}">{{ $contract->name.' - '.optional($contract->package)->name.' - '.$contract->date->format('d/m/Y') }}</option>
+  			  				<option value="{{ $contract->id }}">{{ $contract->name.' - '.optional($contract->package)->name.' - '.optional($contract->date)->format('d/m/Y') }}</option>
   			  				@endforeach
   			  			</select>
   			  		</div>
@@ -233,7 +233,7 @@
   			  			<select class="form-select" name="contract_id" id="editContractId">
   			  				<option value="">Seleccionar</option>
   			  				@foreach($contracts as $contract)
-  			  				<option value="{{ $contract->id }}">{{ $contract->name.' - '.optional($contract->package)->name.' - '.$contract->date->format('d/m/Y') }}</option>
+  			  				<option value="{{ $contract->id }}">{{ $contract->name.' - '.optional($contract->package)->name.' - '.optional($contract->date)->format('d/m/Y') }}</option>
   			  				@endforeach
   			  			</select>
   			  		</div>
