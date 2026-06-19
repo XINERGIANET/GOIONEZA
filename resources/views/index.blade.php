@@ -3,7 +3,7 @@
 @section('title', 'Indicadores de gestión')
 
 @section('content')
-@if(auth()->user()->user == 'admin')
+@if(auth()->user()->role == 'admin')
 <div class="mb-4">
 	<div class="mb-4">
 		<a class="btn btn-primary" href="{{ route('contracts.index', ['modal' => 'create']) }}">Crear nuevo contrato</a>

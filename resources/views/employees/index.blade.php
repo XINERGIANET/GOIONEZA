@@ -41,6 +41,7 @@
 					<th>Nombre</th>
 					<th>Puesto</th>
 					<th>Función</th>
+					<th>Teléfono</th>
 					<th>Acción</th>
 				</tr>
 			</thead>
@@ -52,6 +53,7 @@
 					<td>{{ $employee->name }}</td>
 					<td>{{ $employee->job }}</td>
 					<td>{{ $employee->function }}</td>
+					<td>{{ $employee->phone }}</td>
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
@@ -118,6 +120,12 @@
 							<div class="mb-3">
 								<label class="form-label">Función</label>
 								<input type="text" class="form-control" name="function" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-lg-6">
+							<div class="mb-3">
+								<label class="form-label">Teléfono</label>
+								<input type="text" class="form-control" name="phone" id="createPhone" autocomplete="off">
 							</div>
 						</div>
 						<div class="col-lg-12">
@@ -205,6 +213,12 @@
 							<div class="mb-3">
 								<label class="form-label">Función</label>
 								<input type="text" class="form-control" name="function" id="editFunction" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-lg-6">
+							<div class="mb-3">
+								<label class="form-label">Teléfono</label>
+								<input type="text" class="form-control" name="phone" id="editPhone" autocomplete="off">
 							</div>
 						</div>
 						<div class="col-lg-12">
@@ -314,6 +328,7 @@
 				$('#editName').val(data.name);
 				$('#editJob').val(data.job);
 				$('#editFunction').val(data.function);
+				$('#editPhone').val(data.phone);
 				$('#editId').val(data.id);
 				
 				if(data.user) {

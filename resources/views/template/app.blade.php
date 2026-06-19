@@ -58,7 +58,7 @@
 								</span>
 							</a>
 						</li>
-						@if(auth()->user()->role == 'admin')
+						@if(auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')
 						<li class="nav-item">
 							<a class="nav-link" href="{{ route('calendar') }}" >
 								<span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -123,7 +123,7 @@
 						</li>
 						@endif
 
-						@if(auth()->user()->role == 'ventas' || auth()->user()->role == 'admin')
+						@if(auth()->user()->role == 'ventas' || auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')
 						<li class="nav-item">
 							<a class="nav-link" href="{{ route('quotations.index') }}" >
 								<span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -159,7 +159,7 @@
 								<div class="dropdown-menu-columns">
 									<div class="dropdown-menu-column">
 
-										@if(auth()->user()->role == 'compras' || auth()->user()->role == 'admin')
+										@if(auth()->user()->role == 'compras' || auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')
 										<a class="dropdown-item" href="{{ route('purchases.index') }}">
 											Egresos generales
 										</a>
@@ -167,7 +167,7 @@
 											Gastos por evento
 										</a>
 
-										@if(auth()->user()->role == 'admin')
+										@if(auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')
 										<a class="dropdown-item" href="{{ route('incomes.index') }}">
 											Otros ingresos
 										</a>
@@ -177,6 +177,8 @@
 										<a class="dropdown-item" href="{{ route('payment_schedules.index') }}">
 											Cuentas por pagar
 										</a>
+										@endif
+										@if(auth()->user()->role == 'admin')
 										<a class="dropdown-item" href="{{ route('cash_flow') }}">
 											Flujo de caja
 										</a>
@@ -188,7 +190,7 @@
 							</div>
 						</li>
 
-						@if(auth()->user()->role == 'almacen' || auth()->user()->role == 'admin')
+						@if(auth()->user()->role == 'almacen' || auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')
 						<li class="nav-item">
 							<a class="nav-link" href="{{ route('products.index') }}" >
 								<span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -371,7 +373,7 @@
 						<div class="col-12 col-lg-auto mt-3 mt-lg-0">
 							<ul class="list-inline list-inline-dots mb-0">
 								<li class="list-inline-item">
-									Copyright &copy; 2023
+									Copyright &copy; 2026
 									<a href="/" class="link-secondary">Xinergia</a>
 								</li>
 							</ul>
