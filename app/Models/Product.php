@@ -14,6 +14,8 @@ class Product extends Model
         'name',
         'product_type_id',
         'location',
+        'location_id',
+        'sublocation_id',
         'stock',
         'deleted'
     ];
@@ -28,5 +30,13 @@ class Product extends Model
 
     public function product_type(){
         return $this->belongsTo(ProductType::class);
+    }
+
+    public function location_model(){
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    public function sublocation(){
+        return $this->belongsTo(Sublocation::class, 'sublocation_id');
     }
 }

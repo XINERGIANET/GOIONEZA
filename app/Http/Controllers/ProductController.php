@@ -9,6 +9,7 @@ use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\Product;
 use App\Models\ProductType;
 use App\Models\Movement;
+use App\Models\Location;
 
 class ProductController extends Controller
 {
@@ -16,13 +17,25 @@ class ProductController extends Controller
     {
         $products = Product::active()->when($request->product_type_id, function ($query, $product_type_id) {
             return $query->where('product_type_id', $product_type_id);
+        })->when($request->location_id, function ($query, $location_id) {
+            return $query->where(function($q) use ($location_id) {
+                $q->where('location_id', $location_id);
+                // Also search by text for legacy data compatibility
+                $location = Location::find($location_id);
+                if($location) {
+                    $q->orWhere('location', $location->name);
+                }
+            });
+        })->when($request->sublocation_id, function ($query, $sublocation_id) {
+            return $query->where('sublocation_id', $sublocation_id);
         })->when($request->search, function ($query, $search) {
             return $query->where('name', 'like', '%' . $search . '%');
         })->orderBy('name', 'asc')->paginate(20);
 
         $product_types = ProductType::active()->get();
+        $locations = Location::active()->get();
 
-        return view('products.index', compact('products', 'product_types'));
+        return view('products.index', compact('products', 'product_types', 'locations'));
     }
 
     public function store(Request $request)
@@ -31,7 +44,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'product_type_id' => 'required',
-            'location' => 'required',
+            'location_id' => 'required',
             'stock' => 'required|integer'
         ]);
 
@@ -40,6 +53,13 @@ class ProductController extends Controller
                 'status' => false,
                 'error' => $validator->errors()->first()
             ]);
+        }
+        
+        if($request->has('location_id') && $request->location_id != '') {
+            $location_model = Location::find($request->location_id);
+            if($location_model) {
+                $request->merge(['location' => $location_model->name]);
+            }
         }
 
         $type = ProductType::find($request->product_type_id);
@@ -77,7 +97,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'product_type_id' => 'required',
-            'location' => 'required'
+            'location_id' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -85,6 +105,13 @@ class ProductController extends Controller
                 'status' => false,
                 'error' => $validator->errors()->first()
             ]);
+        }
+        
+        if($request->has('location_id') && $request->location_id != '') {
+            $location_model = Location::find($request->location_id);
+            if($location_model) {
+                $request->merge(['location' => $location_model->name]);
+            }
         }
 
         $product->update($request->all());

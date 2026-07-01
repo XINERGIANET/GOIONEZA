@@ -98,12 +98,14 @@ class ExportController extends Controller
                 $data[] = [utf8_decode($r->name)];
             }
         } elseif ($module == 'products') {
-            $records = \App\Models\Product::with('product_type')->orderBy('name', 'asc')->get();
-            $headings = ['Codigo', 'Nombre', 'Tipo', 'Ubicacion', 'Stock'];
+            $records = \App\Models\Product::with(['product_type', 'location_model', 'sublocation'])->orderBy('name', 'asc')->get();
+            $headings = ['Codigo', 'Nombre', 'Tipo', 'Ubicacion', 'Lado', 'Stock'];
             $title = 'REPORTE DE ALMACEN';
-            $widths = [30, 60, 40, 30, 30];
+            $widths = [25, 50, 35, 30, 30, 20];
             foreach ($records as $r) {
-                $data[] = [$r->code, utf8_decode($r->name), utf8_decode(optional($r->product_type)->name), utf8_decode($r->location), $r->stock];
+                $loc = $r->location_model ? $r->location_model->name : $r->location;
+                $subloc = $r->sublocation ? $r->sublocation->name : '-';
+                $data[] = [$r->code, utf8_decode($r->name), utf8_decode(optional($r->product_type)->name), utf8_decode($loc), utf8_decode($subloc), $r->stock];
             }
         } elseif ($module == 'quotations') {
             $records = \App\Models\Quotation::with(['package'])->orderBy('id', 'desc')->get();

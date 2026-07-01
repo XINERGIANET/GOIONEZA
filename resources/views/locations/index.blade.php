@@ -53,6 +53,9 @@
 								<button class="btn btn-icon btn-primary btn-edit " data-id="{{ $location->id }}" data-bs-toggle="tooltip" title="Editar">
 									<i class="ti ti-pencil icon"></i>
 								</button>
+								<button class="btn btn-icon btn-info btn-sublocations" data-id="{{ $location->id }}" data-name="{{ $location->name }}" data-bs-toggle="tooltip" title="Administrar Lados">
+									<i class="ti ti-list icon"></i> Lados
+								</button>
 								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $location->id }}" data-bs-toggle="tooltip" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
@@ -125,6 +128,51 @@
   				<input type="hidden" id="editId">
   			  <button type="button" class="btn me-auto" data-bs-dismiss="modal"><i class="ti ti-x icon"></i> Cerrar</button>
   			  <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy icon"></i> Guardar</button>
+  			</div>
+  		</form>
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-blur fade" id="sublocationsModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+  	<div class="modal-content">
+  		<form id="storeSublocationForm" method="POST">
+  			<div class="modal-header">
+  			  <h5 class="modal-title">Administrar Lados - <span id="sublocationLocationName"></span></h5>
+  			  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  			</div>
+  			<div class="modal-body">
+  			  <div class="row">
+  			  	<div class="col-lg-8">
+  			  		<div class="mb-3">
+  			  			<label class="form-label">Nombre del Lado</label>
+  			  			<input type="text" class="form-control" name="name" autocomplete="off" required>
+						<input type="hidden" name="location_id" id="sublocationLocationId">
+  			  		</div>
+  			  	</div>
+				<div class="col-lg-4 d-flex align-items-end">
+					<div class="mb-3 w-100">
+						<button type="submit" class="btn btn-primary w-100"><i class="ti ti-plus icon"></i> Agregar</button>
+					</div>
+				</div>
+  			  </div>
+			  
+			  <div class="table-responsive mt-3">
+				<table class="table table-vcenter table-bordered">
+					<thead>
+						<tr>
+							<th>Lado</th>
+							<th width="10%">Acción</th>
+						</tr>
+					</thead>
+					<tbody id="tbl-sublocations">
+					</tbody>
+				</table>
+			  </div>
+  			</div>
+  			<div class="modal-footer">
+  			  <button type="button" class="btn me-auto" data-bs-dismiss="modal"><i class="ti ti-x icon"></i> Cerrar</button>
   			</div>
   		</form>
     </div>
@@ -237,6 +285,85 @@
 
 	});
 
+	// Sublocations logic
+	$(document).on('click', '.btn-sublocations', function(){
+		var locationId = $(this).data('id');
+		var locationName = $(this).data('name');
+		
+		$('#sublocationLocationId').val(locationId);
+		$('#sublocationLocationName').text(locationName);
+		
+		loadSublocations(locationId);
+		
+		$('#sublocationsModal').modal('show');
+	});
+
+	function loadSublocations(locationId){
+		$.ajax({
+			url: '{{ route('sublocations.index') }}',
+			method: 'GET',
+			data: { location_id: locationId },
+			success: function(data){
+				var html = '';
+				if(data.length > 0){
+					data.forEach(function(item){
+						html += '<tr><td>' + item.name + '</td><td>' +
+								'<button class="btn btn-icon btn-red btn-delete-sublocation" data-id="' + item.id + '" data-bs-toggle="tooltip" title="Eliminar">' +
+								'<i class="ti ti-x icon"></i></button></td></tr>';
+					});
+				} else {
+					html = '<tr><td colspan="2" class="text-center">No hay lados registrados</td></tr>';
+				}
+				$('#tbl-sublocations').html(html);
+			}
+		});
+	}
+
+	$('#storeSublocationForm').submit(function(e){
+		e.preventDefault();
+
+		$.ajax({
+			url: '{{ route('sublocations.store') }}',
+			method: 'POST',
+			data: $(this).serialize(),
+			success: function(data){
+				if(data.status){
+					$('#storeSublocationForm').find('input[name="name"]').val('');
+					loadSublocations($('#sublocationLocationId').val());
+					ToastMessage.fire({ text: 'Lado guardado exitosamente' });
+				}else{
+					ToastError.fire({ text: data.error ? data.error : 'Ocurrió un error' });
+				}
+			},
+			error: function(err){
+				ToastError.fire({ text: 'Ocurrió un error' });
+			}
+		});
+	});
+
+	$(document).on('click', '.btn-delete-sublocation', function(e){
+		e.preventDefault();
+		var id = $(this).data('id');
+
+		ToastConfirm.fire({
+			text: '¿Estás seguro que deseas eliminar este lado?',
+		}).then((result) => {
+			if(result.isConfirmed){
+				$.ajax({
+					url: '{{ url('sublocations') }}/' + id,
+					method: 'DELETE',
+					data: { _token: '{{ csrf_token() }}' },
+					success: function(data){
+						loadSublocations($('#sublocationLocationId').val());
+						ToastMessage.fire({ text: 'Lado eliminado' });
+					},
+					error: function(err){
+						ToastError.fire({ text: 'Ocurrió un error' });
+					}
+				});
+			}
+		});
+	});
 
 
 

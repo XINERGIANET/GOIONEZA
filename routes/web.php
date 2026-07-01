@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function(){
 	Route::get('cash_flow',[WebController::class, 'cash_flow'])->name('cash_flow');
 
 	Route::resource('locations', LocationController::class);
+	Route::resource('sublocations', App\Http\Controllers\SublocationController::class);
 	
 	Route::resource('event_types', EventTypeController::class);
 	

@@ -5,22 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Location extends Model
+class Sublocation extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'location_id',
         'name',
         'deleted'
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     public function scopeActive($query){
         return $query->where('deleted', 0);
     }
 
-    public function sublocations(){
-        return $this->hasMany(Sublocation::class);
+    public function location(){
+        return $this->belongsTo(Location::class);
     }
 }
