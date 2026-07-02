@@ -59,14 +59,7 @@
 						</select>
 					</div>
 				</div>
-				<div class="col-lg-3">
-					<div class="mb-3">
-						<label class="form-label">Lado</label>
-						<select class="form-select" name="sublocation_id" id="filterSublocationId">
-							<option value="">Todos</option>
-						</select>
-					</div>
-				</div>
+
 			</div>
 			<button type="submit" class="btn btn-primary">
 				Filtrar
@@ -82,7 +75,7 @@
 					<th>Nombre</th>
 					<th>Tipo</th>
 					<th>Ubicación</th>
-					<th>Lado</th>
+
 					<th>Stock</th>
 					<th>Acción</th>
 				</tr>
@@ -101,13 +94,7 @@
 							{{ $product->location }}
 						@endif
 					</td>
-					<td>
-						@if($product->sublocation)
-							{{ $product->sublocation->name }}
-						@else
-							-
-						@endif
-					</td>
+
 					<td>{{ $product->stock }}</td>
 					<td>
 						<div class="d-flex gap-2">
@@ -185,14 +172,7 @@
   			  			</select>
   			  		</div>
   			  	</div>
-  			  	<div class="col-lg-6">
-  			  		<div class="mb-3">
-  			  			<label class="form-label">Lado (Sub-ubicación)</label>
-  			  			<select type="text" class="form-select" name="sublocation_id" id="createSublocationId">
-  			  				<option value="">Seleccionar</option>
-  			  			</select>
-  			  		</div>
-  			  	</div>
+
   			  	<div class="col-lg-6">
   			  		<div class="mb-3">
   			  			<label class="form-label required">Stock</label>
@@ -248,14 +228,7 @@
   			  			</select>
   			  		</div>
   			  	</div>
-  			  	<div class="col-lg-6">
-  			  		<div class="mb-3">
-  			  			<label class="form-label">Lado (Sub-ubicación)</label>
-  			  			<select type="text" class="form-select" name="sublocation_id" id="editSublocationId">
-  			  				<option value="">Seleccionar</option>
-  			  			</select>
-  			  		</div>
-  			  	</div>
+
   			  </div>
   			</div>
   			<div class="modal-footer">
@@ -406,22 +379,17 @@
 				
 				if(data.location_id) {
 					$('#editLocationId').val(data.location_id);
-					loadSublocations(data.location_id, '#editSublocationId', data.sublocation_id);
 				} else if(data.location) {
 					var matchedOption = $('#editLocationId option').filter(function() {
 						return $(this).text() === data.location;
 					});
 					if(matchedOption.length > 0) {
 						matchedOption.prop('selected', true);
-						var matchedId = matchedOption.val();
-						loadSublocations(matchedId, '#editSublocationId', data.sublocation_id);
 					} else {
 						$('#editLocationId').val('');
-						$('#editSublocationId').html('<option value="">Seleccionar</option>');
 					}
 				} else {
 					$('#editLocationId').val('');
-					$('#editSublocationId').html('<option value="">Seleccionar</option>');
 				}
 				
 				$('#editStock').val(data.stock);
@@ -436,53 +404,7 @@
 
 	});
 
-	$('#createLocationId').change(function() {
-		var locationId = $(this).val();
-		if(locationId) {
-			loadSublocations(locationId, '#createSublocationId');
-		} else {
-			$('#createSublocationId').html('<option value="">Seleccionar</option>');
-		}
-	});
 
-	$('#editLocationId').change(function() {
-		var locationId = $(this).val();
-		if(locationId) {
-			loadSublocations(locationId, '#editSublocationId');
-		} else {
-			$('#editSublocationId').html('<option value="">Seleccionar</option>');
-		}
-	});
-
-	$('#filterLocationId').change(function() {
-		var locationId = $(this).val();
-		if(locationId) {
-			loadSublocations(locationId, '#filterSublocationId', '{{ request()->sublocation_id }}', '<option value="">Todos</option>');
-		} else {
-			$('#filterSublocationId').html('<option value="">Todos</option>');
-		}
-	});
-	
-	// Initial load for filter
-	if($('#filterLocationId').val()) {
-		$('#filterLocationId').trigger('change');
-	}
-
-	function loadSublocations(locationId, selectSelector, selectedSublocationId = null, defaultOption = '<option value="">Seleccionar</option>') {
-		$.ajax({
-			url: '{{ route('sublocations.index') }}',
-			method: 'GET',
-			data: { location_id: locationId },
-			success: function(data) {
-				var html = defaultOption;
-				data.forEach(function(item) {
-					var selected = (selectedSublocationId == item.id) ? 'selected' : '';
-					html += '<option value="' + item.id + '" ' + selected + '>' + item.name + '</option>';
-				});
-				$(selectSelector).html(html);
-			}
-		});
-	}
 
 	$('#editForm').submit(function(e){
 		e.preventDefault();

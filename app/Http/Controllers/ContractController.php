@@ -34,7 +34,7 @@ class ContractController extends Controller
         });
         $total = $contracts->sum('total');
         $contracts = $contracts->orderBy('id', 'desc')->paginate(20);
-        $locations = Location::active()->get();
+        $locations = Location::active()->where('for_contract', 1)->get();
         $event_types = EventType::active()->get();
         $packages = Package::active()->get();
         $extras = Extra::active()->get();

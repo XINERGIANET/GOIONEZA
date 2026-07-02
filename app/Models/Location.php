@@ -11,6 +11,8 @@ class Location extends Model
 
     protected $fillable = [
         'name',
+        'for_contract',
+        'for_warehouse',
         'deleted'
     ];
 

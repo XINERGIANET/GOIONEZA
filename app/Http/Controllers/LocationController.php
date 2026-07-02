@@ -29,7 +29,11 @@ class LocationController extends Controller
             ]);
         }
 
-        Location::create($request->all());
+        $data = $request->all();
+        $data['for_contract'] = $request->has('for_contract') ? 1 : 0;
+        $data['for_warehouse'] = $request->has('for_warehouse') ? 1 : 0;
+
+        Location::create($data);
 
         return response()->json([
             'status' => true
@@ -52,7 +56,11 @@ class LocationController extends Controller
             ]);
         }
 
-        $location->update($request->all());
+        $data = $request->all();
+        $data['for_contract'] = $request->has('for_contract') ? 1 : 0;
+        $data['for_warehouse'] = $request->has('for_warehouse') ? 1 : 0;
+
+        $location->update($data);
 
         return response()->json([
             'status' => true

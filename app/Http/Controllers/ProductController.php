@@ -33,7 +33,7 @@ class ProductController extends Controller
         })->orderBy('name', 'asc')->paginate(20);
 
         $product_types = ProductType::active()->get();
-        $locations = Location::active()->get();
+        $locations = Location::active()->where('for_warehouse', 1)->get();
 
         return view('products.index', compact('products', 'product_types', 'locations'));
     }
