@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function(){
 	Route::post('contracts/{contract}/total', [ContractController::class, 'updateTotal'])->name('contracts.updateTotal');
 	Route::get('contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf');
 	Route::get('contracts/{contract}/pdf2', [ContractController::class, 'pdf2'])->name('contracts.pdf2');
+	Route::get('contracts/{contract}/pdf3', [ContractController::class, 'pdf3'])->name('contracts.pdf3');
 	Route::resource('contracts', ContractController::class);
 
 	Route::resource('incomes', IncomeController::class);

@@ -123,6 +123,9 @@
 								<a href="{{ route('contracts.pdf2', $contract) }}" class="btn btn-icon btn-primary" target="_blank" title="Reporte de personal">
 									<i class="ti ti-printer icon"></i>
 								</a>
+								<a href="{{ route('contracts.pdf3', $contract) }}" class="btn btn-icon btn-info" target="_blank" title="Detalles del contrato">
+									<i class="ti ti-receipt icon"></i>
+								</a>
 								<button class="btn btn-icon btn-primary btn-total" data-id="{{ $contract->id }}" title="Editar total">
 									<i class="ti ti-cash icon"></i>
 								</button>
