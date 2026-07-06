@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\Contract;
 use App\Models\Income;
@@ -293,22 +294,53 @@ class WebController extends Controller
     public function searchDni(Request $request)
     {
         $dni = $request->numero;
-        $token = env('APIRENIEC_TOKEN');
-        
-        // Remove quotes if they exist in the env variable just in case
-        $token = trim($token, '"\'');
-        
-        $url = env('APIRENIEC_URL') . '?numero=' . $dni;
 
-        $response = \Illuminate\Support\Facades\Http::withToken($token)->get($url);
+        $response = Http::withToken((string) config('apireniec.key'))
+            ->timeout(15)
+            ->post((string) config('apireniec.url'), [
+                'dni' => $dni,
+            ]);
 
-        if ($response->successful()) {
-            return response()->json(array_merge(['status' => true], $response->json()));
+        $data = (array) $response->json();
+        $estado = (bool) ($data['success'] ?? false);
+        $resultado = (array) ($data['data'] ?? []);
+
+        if ($estado) {
+            return response()->json([
+                'status' => true,
+                'nombres' => $resultado['nombres'] ?? null,
+                'apellidoPaterno' => $resultado['apellido_paterno'] ?? null,
+                'apellidoMaterno' => $resultado['apellido_materno'] ?? null,
+            ]);
         }
 
         return response()->json([
             'status' => false,
             'error' => 'DNI no encontrado o error en la API: ' . $response->body()
+        ]);
+    }
+
+    public function searchRuc(Request $request)
+    {
+        $ruc = $request->numero;
+
+        $response = Http::withToken((string) config('apireniec.key'))
+            ->timeout(15)
+            ->post((string) config('apireniec.ruc_url'), [
+                'ruc' => $ruc,
+            ]);
+
+        $data = (array) $response->json();
+        $estado = (bool) ($data['success'] ?? false);
+        $resultado = (array) ($data['data'] ?? []);
+
+        if ($estado) {
+            return response()->json(array_merge(['status' => true], $resultado));
+        }
+
+        return response()->json([
+            'status' => false,
+            'error' => 'RUC no encontrado o error en la API: ' . $response->body()
         ]);
     }
 }

@@ -110,6 +110,7 @@ Route::middleware('auth')->group(function(){
 	Route::get('help',[WebController::class, 'help'])->name('help');
 
 	Route::get('search-dni', [WebController::class, 'searchDni'])->name('search.dni');
+	Route::get('search-ruc', [WebController::class, 'searchRuc'])->name('search.ruc');
 
 	Route::get('export/{module}/{format}', [App\Http\Controllers\ExportController::class, 'export'])->name('export');
 
