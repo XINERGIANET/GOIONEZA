@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function(){
 	Route::get('contracts/charges', [ContractController::class, 'charges'])->name('contracts.charges');
 	Route::post('contracts/{contract}/payment', [ContractController::class, 'payment'])->name('contracts.payment');
 	Route::get('contracts/{contract}/payments', [ContractController::class, 'payments'])->name('contracts.payments');
+	Route::get('payments/{payment}/pdf', [ContractController::class, 'paymentPdf'])->name('payments.pdf');
 	Route::post('contracts/{contract}/extra', [ContractController::class, 'extra'])->name('contracts.extra');
 	Route::get('contracts/{contract}/employees', [ContractController::class, 'employees'])->name('contracts.employees');
 	Route::post('contracts/{contract}/employee', [ContractController::class, 'employee'])->name('contracts.employee');

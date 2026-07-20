@@ -182,6 +182,7 @@
   		  			<th>Monto</th>
   		  			<th>Método de pago</th>
   		  			<th>Fecha</th>
+  		  			<th>Acción</th>
   		  		</tr>
   		  	</thead>
   		  	<tbody id="tbl-payments"></tbody>
@@ -250,6 +251,11 @@
 								<td>${payment.amount}</td>
 								<td>${payment.payment_method ?? '' }</td>
 								<td>${payment.date}</td>
+								<td>
+									<a href="${payment.pdf_url}" target="_blank" class="btn btn-icon btn-primary btn-sm" title="Imprimir" data-bs-toggle="tooltip">
+										<i class="ti ti-printer icon"></i>
+									</a>
+								</td>
 							</tr>
 						`;
 					});
