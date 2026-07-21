@@ -479,6 +479,22 @@ class ContractController extends Controller
 
         $employees = is_array(json_decode($contract->employees)) ? json_decode($contract->employees) : [];
 
+        foreach ($employees as &$emp) {
+            if (isset($emp->id)) {
+                $employee = \App\Models\Employee::find($emp->id);
+                $emp->event_payment = $employee ? $employee->event_payment : '';
+                
+                $emp->is_paid = \App\Models\Expense::active()
+                    ->where('contract_id', $contract->id)
+                    ->where('provider', $emp->name)
+                    ->where('description', 'like', 'Pago a personal:%')
+                    ->exists();
+            } else {
+                $emp->event_payment = '';
+                $emp->is_paid = false;
+            }
+        }
+
         return response()->json([
             'date' => $contract->event_date->format('d/m/Y') . ' ' . $contract->event_time->format('H:i') . ' - ' . $contract->event_end->format('H:i'),
             'employees' => $employees
@@ -963,25 +979,38 @@ class ContractController extends Controller
         
         $fpdf->Ln(2);
         
+        $startY = $fpdf->GetY();
+       
+        // Left Column
         $fpdf->SetFont('Montserrat', 'B', 9);
-        $fpdf->Cell(25, 6, 'Nombre:', 0, 0);
+        $fpdf->Cell(25, 5, 'Nombre:', 0, 0);
         $fpdf->SetFont('Montserrat', '', 9);
-        $fpdf->Cell(60, 6, utf8_decode($contract->name), 0, 0);
+        // Using MultiCell for the name so it wraps instead of overflowing
+        $fpdf->MultiCell(60, 5, utf8_decode($contract->name), 0, 'L');
+        
+        $yAfterName = $fpdf->GetY();
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 5, 'DNI:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(60, 5, utf8_decode($contract->document), 0, 1);
+        $yAfterDni = $fpdf->GetY();
 
+        // Right Column
+        $fpdf->SetXY(110, $startY);
         $fpdf->SetFont('Montserrat', 'B', 9);
-        $fpdf->Cell(30, 6, utf8_decode('Código:'), 0, 0);
+        $fpdf->Cell(30, 5, utf8_decode('Código:'), 0, 0);
         $fpdf->SetFont('Montserrat', '', 9);
-        $fpdf->Cell(55, 6, utf8_decode($contract->code), 0, 1);
+        $fpdf->Cell(50, 5, utf8_decode($contract->code), 0, 1);
 
+        $fpdf->SetXY(110, $startY + 5);
         $fpdf->SetFont('Montserrat', 'B', 9);
-        $fpdf->Cell(25, 6, 'DNI:', 0, 0);
+        $fpdf->Cell(30, 5, 'Fecha de evento:', 0, 0);
         $fpdf->SetFont('Montserrat', '', 9);
-        $fpdf->Cell(60, 6, utf8_decode($contract->document), 0, 0);
+        $fpdf->Cell(50, 5, utf8_decode(optional($contract->event_date)->format('d/m/Y')), 0, 1);
 
-        $fpdf->SetFont('Montserrat', 'B', 9);
-        $fpdf->Cell(30, 6, 'Fecha de evento:', 0, 0);
-        $fpdf->SetFont('Montserrat', '', 9);
-        $fpdf->Cell(55, 6, utf8_decode(optional($contract->event_date)->format('d/m/Y')), 0, 1);
+        // Reset Y below the tallest column
+        $maxY = max($yAfterDni, $fpdf->GetY());
+        $fpdf->SetY($maxY);
 
         $fpdf->Ln(15);
         $fpdf->SetDrawColor(200, 200, 200);

@@ -95,6 +95,8 @@ Route::middleware('auth')->group(function(){
 	Route::resource('purchases', PurchaseController::class);
 	
 	Route::get('expenses/report', [ExpenseController::class, 'report'])->name('expenses.report');
+	Route::get('expenses/personnel', [ExpenseController::class, 'personnel'])->name('personnel_expenses.index');
+	Route::get('expenses/{expense}/pdf', [ExpenseController::class, 'pdf'])->name('expenses.pdf');
 	Route::resource('expenses', ExpenseController::class);
 	
 	Route::get('products/{product}/movements', [ProductController::class, 'movements'])->name('products.movements');

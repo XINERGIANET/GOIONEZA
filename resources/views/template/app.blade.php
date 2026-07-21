@@ -166,6 +166,9 @@
 										<a class="dropdown-item" href="{{ route('expenses.index') }}">
 											Gastos por evento
 										</a>
+										<a class="dropdown-item" href="{{ route('personnel_expenses.index') }}">
+											Gastos por personal
+										</a>
 
 										@if(auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')
 										<a class="dropdown-item" href="{{ route('incomes.index') }}">

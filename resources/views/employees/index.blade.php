@@ -42,6 +42,7 @@
 					<th>Puesto</th>
 					<th>Función</th>
 					<th>Teléfono</th>
+					<th>Nacimiento</th>
 					<th>Acción</th>
 				</tr>
 			</thead>
@@ -54,6 +55,7 @@
 					<td>{{ $employee->job }}</td>
 					<td>{{ $employee->function }}</td>
 					<td>{{ $employee->phone }}</td>
+					<td>{{ optional($employee->birth_date)->format('d/m/Y') }}</td>
 					<td>
 						<div class="d-flex gap-2">
 							<div class="d-flex gap-2">
@@ -126,6 +128,18 @@
 							<div class="mb-3">
 								<label class="form-label">Teléfono</label>
 								<input type="text" class="form-control" name="phone" id="createPhone" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-lg-6">
+							<div class="mb-3">
+								<label class="form-label">Fecha de nacimiento</label>
+								<input type="date" class="form-control" name="birth_date" id="createBirthDate">
+							</div>
+						</div>
+						<div class="col-lg-6">
+							<div class="mb-3">
+								<label class="form-label">Pago por evento (S/)</label>
+								<input type="number" step="0.01" class="form-control" name="event_payment" id="createEventPayment" placeholder="Ej: 120.00">
 							</div>
 						</div>
 						<div class="col-lg-12">
@@ -219,6 +233,18 @@
 							<div class="mb-3">
 								<label class="form-label">Teléfono</label>
 								<input type="text" class="form-control" name="phone" id="editPhone" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-lg-6">
+							<div class="mb-3">
+								<label class="form-label">Fecha de nacimiento</label>
+								<input type="date" class="form-control" name="birth_date" id="editBirthDate">
+							</div>
+						</div>
+						<div class="col-lg-6">
+							<div class="mb-3">
+								<label class="form-label">Pago por evento (S/)</label>
+								<input type="number" step="0.01" class="form-control" name="event_payment" id="editEventPayment" placeholder="Ej: 120.00">
 							</div>
 						</div>
 						<div class="col-lg-12">
@@ -329,6 +355,8 @@
 				$('#editJob').val(data.job);
 				$('#editFunction').val(data.function);
 				$('#editPhone').val(data.phone);
+				$('#editBirthDate').val(data.birth_date);
+				$('#editEventPayment').val(data.event_payment);
 				$('#editId').val(data.id);
 				
 				if(data.user) {

@@ -15,9 +15,13 @@ class Employee extends Model
         'job',
         'function',
         'phone',
+        'birth_date',
+        'event_payment',
         'user_id',
         'deleted'
     ];
+
+    protected $dates = ['birth_date'];
 
     public $timestamps = false;
 
