@@ -533,10 +533,20 @@
   						</div>
   					</div>
   					<div class="col-lg-6">
-  						<div class="mb-3">
-  							<label class="form-label required">Hora de inicio evento</label>
-  							<input type="time" class="form-control" name="event_time" id="editEventTime">
-  						</div>
+  						<div class="row">
+  							<div class="col-6">
+		  						<div class="mb-3">
+		  							<label class="form-label required">Hora inicio</label>
+		  							<input type="time" class="form-control" name="event_time" id="editEventTime">
+		  						</div>
+		  					</div>
+  							<div class="col-6">
+		  						<div class="mb-3">
+		  							<label class="form-label required">Hora término</label>
+		  							<input type="time" class="form-control" name="event_end" id="editEventEnd">
+		  						</div>
+		  					</div>
+	  					</div>
   					</div>
   				</div>
   			</div>
@@ -834,7 +844,9 @@
 				$('#editPeopleNumber').val(data.people_number);
 				$('#editEventDate').val(data.event_date);
 				$('#editEventTime').val(data.event_time);
+				$('#editEventEnd').val(data.event_end);
 				$('#editId').val(data.id);
+				
 				$('#editModal').modal('show');
 			},
 			error: function(err){

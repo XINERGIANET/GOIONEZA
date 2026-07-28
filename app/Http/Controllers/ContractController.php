@@ -240,7 +240,8 @@ class ContractController extends Controller
             'event_type_id' => $contract->event_type_id,
             'people_number' => $contract->people_number,
             'event_date' => $contract->event_date->format('Y-m-d'),
-            'event_time' => $contract->event_time->format('H:i')
+            'event_time' => $contract->event_time->format('H:i'),
+            'event_end' => $contract->event_end->format('H:i')
         ]);
     }
 
@@ -255,6 +256,7 @@ class ContractController extends Controller
             'people_number' => 'required|integer',
             'event_date' => 'required|date',
             'event_time' => 'required|date_format:H:i',
+            'event_end' => 'required|date_format:H:i',
         ]);
 
         if ($validator->fails()) {
@@ -277,6 +279,7 @@ class ContractController extends Controller
         $contract->event_type_id = $request->event_type_id;
         $contract->event_date = $request->event_date;
         $contract->event_time = $request->event_time;
+        $contract->event_end = $request->event_end;
 
         if ($request->people_number != $contract->people_number) {
 
