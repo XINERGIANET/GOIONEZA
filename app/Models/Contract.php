@@ -78,4 +78,9 @@ class Contract extends Model
     public function commission(){
         return $this->belongsTo(Commission::class);
     }
+
+    public function getTotalPaidAttribute()
+    {
+        return floatval($this->initial_payment) + floatval($this->payments->sum('amount'));
+    }
 }

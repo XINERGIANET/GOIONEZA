@@ -621,10 +621,17 @@ class ContractController extends Controller
         $fpdf->MultiCell(160, 6, utf8_decode('Por el presente contrato el cliente manifiesta su necesidad de contratar los servicios de la prestadora del servicio para la realización de un evento consistente en la celebración del evento en el Local "Quinta Fernandini", el ' . $contract->event_date->format('d/m/Y') . '; quedará reservado el evento que tiene una capacidad de ' . $contract->people_number . ' personas con la duración de ' . $contract->event_duration . ' horas, desde las ' . optional($contract->event_time)->format('h:i a') . ' hasta las ' . optional($contract->event_end)->format('h:i a') . '.'), 0, 'J');
         $fpdf->Ln(4);
 
+        $additionalPayments = $contract->payments->sum('amount');
+        $paymentText = 'A la firma del contrato se entrega la suma de S/' . number_format($contract->initial_payment, 2);
+        if ($additionalPayments > 0) {
+            $paymentText .= ' (Total abonado a la fecha: S/' . number_format($contract->total_paid, 2) . ')';
+        }
+        $paymentText .= ' quedando un saldo de S/' . number_format($contract->debt, 2) . ' que debe ser cancelado una semana antes del día del evento.';
+
         $fpdf->SetFont('Montserrat', 'B', 11);
         $fpdf->Cell(160, 6, 'SEGUNDA:', 0, 1);
         $fpdf->SetFont('Montserrat', '', 11);
-        $fpdf->MultiCell(160, 6, utf8_decode('Los invitados serán un total de ' . $contract->people_number . ' adultos (los niños mayores a 3 años pagan cubierto). Este número podrá variar hasta 8 días hábiles antes de la fecha citada para la celebración del evento. En caso de sobrepasar los asistentes acordados se pagarán los cubiertos de los mismos con un 10% adicional por no haber sido comunicado. El precio del cubierto es S/' . number_format(optional($contract->package)->price, 2) . ' según el paquete personalizado, haciendo un total de S/' . number_format($contract->total, 2) . '. A la firma del contrato se entrega la suma de S/' . number_format($contract->initial_payment, 2) . ' quedando un saldo de S/' . number_format($contract->debt, 2) . ' que debe ser cancelado una semana antes del día del evento.'), 0, 'J');
+        $fpdf->MultiCell(160, 6, utf8_decode('Los invitados serán un total de ' . $contract->people_number . ' adultos (los niños mayores a 3 años pagan cubierto). Este número podrá variar hasta 8 días hábiles antes de la fecha citada para la celebración del evento. En caso de sobrepasar los asistentes acordados se pagarán los cubiertos de los mismos con un 10% adicional por no haber sido comunicado. El precio del cubierto es S/' . number_format(optional($contract->package)->price, 2) . ' según el paquete personalizado, haciendo un total de S/' . number_format($contract->total, 2) . '. ' . $paymentText), 0, 'J');
         $fpdf->Ln(4);
 
         $fpdf->SetFont('Montserrat', 'B', 11);
@@ -907,8 +914,30 @@ class ContractController extends Controller
         $fpdf->SetFont('Montserrat', '', 11);
         $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($contract->total, 2)), 0, 1, 'R');
 
-        // Pago Inicial
-        if ($contract->initial_payment > 0) {
+        // Total Abonado / Pagos
+        $additionalPayments = $contract->payments->sum('amount');
+        if ($additionalPayments > 0) {
+            if ($contract->initial_payment > 0) {
+                $fpdf->SetX(100);
+                $fpdf->SetFont('Montserrat', '', 9);
+                $fpdf->SetTextColor(100, 100, 100);
+                $fpdf->Cell(50, 6, utf8_decode('Pago inicial:'), 0, 0, 'R');
+                $fpdf->Cell(40, 6, utf8_decode('S/ ' . number_format($contract->initial_payment, 2)), 0, 1, 'R');
+            }
+            $fpdf->SetX(100);
+            $fpdf->SetFont('Montserrat', '', 9);
+            $fpdf->SetTextColor(100, 100, 100);
+            $fpdf->Cell(50, 6, utf8_decode('Abonos en cobranzas:'), 0, 0, 'R');
+            $fpdf->Cell(40, 6, utf8_decode('S/ ' . number_format($additionalPayments, 2)), 0, 1, 'R');
+
+            $fpdf->SetX(100);
+            $fpdf->SetFont('Montserrat', 'B', 10);
+            $fpdf->SetTextColor(40, 167, 69); // Green for payments
+            $fpdf->Cell(50, 8, utf8_decode('TOTAL ABONADO:'), 0, 0, 'R');
+            $fpdf->SetFont('Montserrat', 'B', 11);
+            $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($contract->total_paid, 2)), 0, 1, 'R');
+            $fpdf->SetTextColor(30, 30, 30); // reset
+        } elseif ($contract->initial_payment > 0) {
             $fpdf->SetX(100);
             $fpdf->SetFont('Montserrat', 'B', 10);
             $fpdf->SetTextColor(40, 167, 69); // Green for payments
