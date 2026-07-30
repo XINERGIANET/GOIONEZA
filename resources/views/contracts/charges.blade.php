@@ -67,8 +67,9 @@
 					<th>Nombre</th>
 					<th>Fecha de evento</th>
 					<th>Paquete</th>
-					<th>Total inicial</th>
+					<th>Total</th>
 					<th>Pago inicial</th>
+					<th>Total abonado</th>
 					<th>Deuda</th>
 					<th>Fecha de pago de deuda</th>
 					<th>Acción</th>
@@ -83,9 +84,10 @@
 					<td>{{ $contract->name }}</td>
 					<td>{{ $contract->event_date->format('d/m/Y') }}</td>
 					<td>{{ optional($contract->package)->name }}</td>
-					<td>S/{{ $contract->total }}</td>
-					<td>S/{{ $contract->initial_payment }}</td>
-					<td>S/{{ $contract->debt }}</td>
+					<td>S/{{ number_format($contract->total, 2) }}</td>
+					<td>S/{{ number_format($contract->initial_payment, 2) }}</td>
+					<td><span class="text-success fw-bold">S/{{ number_format($contract->total_paid, 2) }}</span></td>
+					<td>S/{{ number_format($contract->debt, 2) }}</td>
 					<td>{{ $contract->debt_payment_date->format('d/m/Y') }}</td>
 					<td>
 						<div class="d-flex gap-2">

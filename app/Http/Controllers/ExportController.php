@@ -153,12 +153,12 @@ class ExportController extends Controller
                 $data[] = [utf8_decode($r->description), $r->amount, utf8_decode(optional($r->income_type)->name), utf8_decode(optional($r->payment_method)->name), utf8_decode(optional($r->location)->name), $r->date ? $r->date->format('d/m/Y') : ''];
             }
         } elseif ($module == 'charges') {
-            $records = \App\Models\Contract::with(['package'])->where('debt', '>', 0)->orderBy('debt_payment_date', 'asc')->get();
-            $headings = ['DNI', 'Codigo', 'Nombre', 'Fecha evento', 'Paquete', 'Total', 'Pago inicial', 'Deuda', 'Fecha pago'];
+            $records = \App\Models\Contract::with(['package', 'payments'])->where('debt', '>', 0)->orderBy('debt_payment_date', 'asc')->get();
+            $headings = ['DNI', 'Codigo', 'Nombre', 'Fecha evento', 'Paquete', 'Total', 'Pago inicial', 'Total abonado', 'Deuda', 'Fecha pago'];
             $title = 'CUENTAS POR COBRAR';
-            $widths = [20, 20, 40, 25, 25, 15, 15, 15, 15];
+            $widths = [18, 18, 35, 22, 22, 15, 15, 15, 15, 15];
             foreach ($records as $r) {
-                $data[] = [$r->document, utf8_decode($r->code), utf8_decode($r->name), $r->event_date ? $r->event_date->format('d/m/Y') : '', utf8_decode(optional($r->package)->name), $r->total, $r->initial_payment, $r->debt, $r->debt_payment_date ? $r->debt_payment_date->format('d/m/Y') : ''];
+                $data[] = [$r->document, utf8_decode($r->code), utf8_decode($r->name), $r->event_date ? $r->event_date->format('d/m/Y') : '', utf8_decode(optional($r->package)->name), $r->total, $r->initial_payment, $r->total_paid, $r->debt, $r->debt_payment_date ? $r->debt_payment_date->format('d/m/Y') : ''];
             }
         } elseif ($module == 'payment_schedules') {
             $records = \App\Models\PaymentSchedule::orderBy('day', 'asc')->get();
