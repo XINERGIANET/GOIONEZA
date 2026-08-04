@@ -168,6 +168,14 @@ class ExportController extends Controller
             foreach ($records as $r) {
                 $data[] = [utf8_decode($r->description), $r->amount, $r->day];
             }
+        } elseif ($module == 'payment_methods') {
+            $records = \App\Models\PaymentMethod::active()->orderBy('name', 'asc')->get();
+            $headings = ['Nombre'];
+            $title = 'METODOS DE PAGO';
+            $widths = [190];
+            foreach ($records as $r) {
+                $data[] = [utf8_decode($r->name)];
+            }
         } else {
             return back()->with('error', 'Módulo no soportado para exportación');
         }

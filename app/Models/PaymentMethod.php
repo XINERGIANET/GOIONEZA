@@ -14,4 +14,8 @@ class PaymentMethod extends Model
     ];
 
     public $timestamps = false;
+
+    public function scopeActive($query){
+        return $query->where('name', 'not like', '%(Inactivo)%');
+    }
 }

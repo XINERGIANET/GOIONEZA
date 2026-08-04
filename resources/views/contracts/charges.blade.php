@@ -174,6 +174,11 @@
   	<div class="modal-content">
   		<div class="modal-header">
   		  <h5 class="modal-title">Pagos realizados</h5>
+  		  <div class="ms-auto me-2">
+  		    <a href="#" id="btnExportPaymentsPdf" target="_blank" class="btn btn-outline-danger btn-sm d-none">
+  		      <i class="ti ti-file-type-pdf icon"></i> Exportar PDF
+  		    </a>
+  		  </div>
   		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   		</div>
   		<div class="modal-body">
@@ -263,6 +268,12 @@
 					});
 
 					$('#tbl-payments').html(html);
+
+					if (data.pdf_all_url) {
+						$('#btnExportPaymentsPdf').attr('href', data.pdf_all_url).removeClass('d-none');
+					} else {
+						$('#btnExportPaymentsPdf').addClass('d-none');
+					}
 
 					$('#paymentsModal').modal('show');
 				}

@@ -12,6 +12,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CommissionController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\PaymentScheduleController;
 use App\Http\Controllers\IncomeTypeController;
@@ -62,6 +63,8 @@ Route::middleware('auth')->group(function(){
 	
 	Route::resource('commissions', CommissionController::class);
 	
+	Route::resource('payment_methods', PaymentMethodController::class);
+	
 	Route::resource('income_types', IncomeTypeController::class);
 	
 	Route::resource('expense_types', ExpenseTypeController::class);
@@ -76,6 +79,7 @@ Route::middleware('auth')->group(function(){
 	Route::get('contracts/charges', [ContractController::class, 'charges'])->name('contracts.charges');
 	Route::post('contracts/{contract}/payment', [ContractController::class, 'payment'])->name('contracts.payment');
 	Route::get('contracts/{contract}/payments', [ContractController::class, 'payments'])->name('contracts.payments');
+	Route::get('contracts/{contract}/payments-pdf', [ContractController::class, 'paymentsPdf'])->name('contracts.paymentsPdf');
 	Route::get('payments/{payment}/pdf', [ContractController::class, 'paymentPdf'])->name('payments.pdf');
 	Route::post('contracts/{contract}/extra', [ContractController::class, 'extra'])->name('contracts.extra');
 	Route::get('contracts/{contract}/employees', [ContractController::class, 'employees'])->name('contracts.employees');

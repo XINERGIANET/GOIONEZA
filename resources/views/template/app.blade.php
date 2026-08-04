@@ -117,6 +117,9 @@
 										<a class="dropdown-item" href="{{ route('payment_schedules.index') }}">
 											Cronograma de pagos
 										</a>
+										<a class="dropdown-item" href="{{ route('payment_methods.index') }}">
+											Métodos de pago
+										</a>
 									</div>
 								</div>
 							</div>

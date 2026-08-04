@@ -129,6 +129,11 @@
 								<button class="btn btn-icon btn-primary btn-total" data-id="{{ $contract->id }}" title="Editar total">
 									<i class="ti ti-cash icon"></i>
 								</button>
+								@if($contract->paid)
+								<button class="btn btn-icon btn-success btn-payments" data-id="{{ $contract->id }}" title="Historial de pagos" data-bs-toggle="tooltip">
+									<i class="ti ti-history icon"></i>
+								</button>
+								@endif
 								<button class="btn btn-icon btn-red btn-delete" data-id="{{ $contract->id }}" title="Eliminar">
 									<i class="ti ti-x icon"></i>
 								</button>
@@ -703,6 +708,36 @@
     </div>
   </div>
 </div>
+
+<div class="modal modal-blur fade" id="paymentsModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+  	<div class="modal-content">
+  		<div class="modal-header">
+  		  <h5 class="modal-title">Pagos realizados</h5>
+  		  <div class="ms-auto me-2">
+  		    <a href="#" id="btnExportPaymentsPdf" target="_blank" class="btn btn-outline-danger btn-sm d-none">
+  		      <i class="ti ti-file-type-pdf icon"></i> Exportar PDF
+  		    </a>
+  		  </div>
+  		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  		</div>
+  		<div class="modal-body">
+  		  <table class="table">
+  		  	<thead>
+  		  		<tr>
+  		  			<th>Número de operación</th>
+  		  			<th>Monto</th>
+  		  			<th>Método de pago</th>
+  		  			<th>Fecha</th>
+  		  			<th>Acción</th>
+  		  		</tr>
+  		  	</thead>
+  		  	<tbody id="tbl-payments"></tbody>
+  		  </table>
+  		</div>
+    </div>
+  </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -1116,7 +1151,50 @@
 
 	});
 
+	$(document).on('click', '.btn-payments', function(){
 
+		var id = $(this).data('id');
+
+		$.ajax({
+			url: '{{ route('contracts.index') }}' + '/' + id + '/payments',
+			method: 'GET',
+			success: function(data){
+				if(data.status){
+					var html = '';
+
+					data.payments.forEach(function(payment){
+						html += `
+							<tr>
+								<td>${payment.operation_number ?? '' }</td>
+								<td>${payment.amount}</td>
+								<td>${payment.payment_method ?? '' }</td>
+								<td>${payment.date}</td>
+								<td>
+									<a href="${payment.pdf_url}" target="_blank" class="btn btn-icon btn-primary btn-sm" title="Imprimir" data-bs-toggle="tooltip">
+										<i class="ti ti-printer icon"></i>
+									</a>
+								</td>
+							</tr>
+						`;
+					});
+
+					$('#tbl-payments').html(html);
+
+					if (data.pdf_all_url) {
+						$('#btnExportPaymentsPdf').attr('href', data.pdf_all_url).removeClass('d-none');
+					} else {
+						$('#btnExportPaymentsPdf').addClass('d-none');
+					}
+
+					$('#paymentsModal').modal('show');
+				}
+			},
+			error: function(err){
+				console.log(err);
+			}
+		});
+
+	});
 
 </script>
 @endsection
