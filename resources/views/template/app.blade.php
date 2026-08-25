@@ -117,6 +117,9 @@
 										<a class="dropdown-item" href="{{ route('payment_schedules.index') }}">
 											Cronograma de pagos
 										</a>
+										<a class="dropdown-item" href="{{ route('payment_methods.index') }}">
+											Métodos de pago
+										</a>
 									</div>
 								</div>
 							</div>
@@ -165,6 +168,9 @@
 										</a>
 										<a class="dropdown-item" href="{{ route('expenses.index') }}">
 											Gastos por evento
+										</a>
+										<a class="dropdown-item" href="{{ route('personnel_expenses.index') }}">
+											Gastos por personal
 										</a>
 
 										@if(auth()->user()->role == 'admin' || auth()->user()->role == 'asistente')

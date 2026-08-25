@@ -240,7 +240,8 @@ class ContractController extends Controller
             'event_type_id' => $contract->event_type_id,
             'people_number' => $contract->people_number,
             'event_date' => $contract->event_date->format('Y-m-d'),
-            'event_time' => $contract->event_time->format('H:i')
+            'event_time' => $contract->event_time->format('H:i'),
+            'event_end' => $contract->event_end->format('H:i')
         ]);
     }
 
@@ -255,6 +256,7 @@ class ContractController extends Controller
             'people_number' => 'required|integer',
             'event_date' => 'required|date',
             'event_time' => 'required|date_format:H:i',
+            'event_end' => 'required|date_format:H:i',
         ]);
 
         if ($validator->fails()) {
@@ -277,6 +279,7 @@ class ContractController extends Controller
         $contract->event_type_id = $request->event_type_id;
         $contract->event_date = $request->event_date;
         $contract->event_time = $request->event_time;
+        $contract->event_end = $request->event_end;
 
         if ($request->people_number != $contract->people_number) {
 
@@ -361,14 +364,17 @@ class ContractController extends Controller
     {
         $payments = $contract->payments()->with('payment_method')->orderBy('date', 'desc')->get()->map(function ($payment) {
             return [
+            'id' => $payment->id,
             'operation_number' => $payment->operation_number,
             'amount' => $payment->amount,
             'payment_method' => optional($payment->payment_method)->name,
-            'date' => $payment->date->format('d/m/Y')
+            'date' => $payment->date->format('d/m/Y'),
+            'pdf_url' => route('payments.pdf', $payment->id)
             ];
         });
         return response()->json([
             'status' => true,
+            'pdf_all_url' => route('contracts.paymentsPdf', $contract->id),
             'payments' => $payments
         ]);
     }
@@ -476,6 +482,22 @@ class ContractController extends Controller
     {
 
         $employees = is_array(json_decode($contract->employees)) ? json_decode($contract->employees) : [];
+
+        foreach ($employees as &$emp) {
+            if (isset($emp->id)) {
+                $employee = \App\Models\Employee::find($emp->id);
+                $emp->event_payment = $employee ? $employee->event_payment : '';
+                
+                $emp->is_paid = \App\Models\Expense::active()
+                    ->where('contract_id', $contract->id)
+                    ->where('provider', $emp->name)
+                    ->where('description', 'like', 'Pago a personal:%')
+                    ->exists();
+            } else {
+                $emp->event_payment = '';
+                $emp->is_paid = false;
+            }
+        }
 
         return response()->json([
             'date' => $contract->event_date->format('d/m/Y') . ' ' . $contract->event_time->format('H:i') . ' - ' . $contract->event_end->format('H:i'),
@@ -600,10 +622,17 @@ class ContractController extends Controller
         $fpdf->MultiCell(160, 6, utf8_decode('Por el presente contrato el cliente manifiesta su necesidad de contratar los servicios de la prestadora del servicio para la realización de un evento consistente en la celebración del evento en el Local "Quinta Fernandini", el ' . $contract->event_date->format('d/m/Y') . '; quedará reservado el evento que tiene una capacidad de ' . $contract->people_number . ' personas con la duración de ' . $contract->event_duration . ' horas, desde las ' . optional($contract->event_time)->format('h:i a') . ' hasta las ' . optional($contract->event_end)->format('h:i a') . '.'), 0, 'J');
         $fpdf->Ln(4);
 
+        $additionalPayments = $contract->payments->sum('amount');
+        $paymentText = 'A la firma del contrato se entrega la suma de S/' . number_format($contract->initial_payment, 2);
+        if ($additionalPayments > 0) {
+            $paymentText .= ' (Total abonado a la fecha: S/' . number_format($contract->total_paid, 2) . ')';
+        }
+        $paymentText .= ' quedando un saldo de S/' . number_format($contract->debt, 2) . ' que debe ser cancelado una semana antes del día del evento.';
+
         $fpdf->SetFont('Montserrat', 'B', 11);
         $fpdf->Cell(160, 6, 'SEGUNDA:', 0, 1);
         $fpdf->SetFont('Montserrat', '', 11);
-        $fpdf->MultiCell(160, 6, utf8_decode('Los invitados serán un total de ' . $contract->people_number . ' adultos (los niños mayores a 3 años pagan cubierto). Este número podrá variar hasta 8 días hábiles antes de la fecha citada para la celebración del evento. En caso de sobrepasar los asistentes acordados se pagarán los cubiertos de los mismos con un 10% adicional por no haber sido comunicado. El precio del cubierto es S/' . number_format(optional($contract->package)->price, 2) . ' según el paquete personalizado, haciendo un total de S/' . number_format($contract->total, 2) . '. A la firma del contrato se entrega la suma de S/' . number_format($contract->initial_payment, 2) . ' quedando un saldo de S/' . number_format($contract->debt, 2) . ' que debe ser cancelado una semana antes del día del evento.'), 0, 'J');
+        $fpdf->MultiCell(160, 6, utf8_decode('Los invitados serán un total de ' . $contract->people_number . ' adultos (los niños mayores a 3 años pagan cubierto). Este número podrá variar hasta 8 días hábiles antes de la fecha citada para la celebración del evento. En caso de sobrepasar los asistentes acordados se pagarán los cubiertos de los mismos con un 10% adicional por no haber sido comunicado. El precio del cubierto es S/' . number_format(optional($contract->package)->price, 2) . ' según el paquete personalizado, haciendo un total de S/' . number_format($contract->total, 2) . '. ' . $paymentText), 0, 'J');
         $fpdf->Ln(4);
 
         $fpdf->SetFont('Montserrat', 'B', 11);
@@ -770,5 +799,504 @@ class ContractController extends Controller
         $fpdf->Ln();
 
         $fpdf->Output();
+    }
+
+    public function pdf3(Contract $contract)
+    {
+        $fpdf = new Fpdf();
+        $fpdf->SetMargins(20, 20, 20);
+        $fpdf->AddPage();
+        $fpdf->AddFont('Montserrat', '');
+        $fpdf->AddFont('Montserrat', 'B');
+
+        // Header Logo
+        $fpdf->Image(public_path('assets/images/logonew2.png'), 20, 15, 45);
+
+        // Header Text (Right aligned)
+        $fpdf->SetFont('Montserrat', 'B', 16);
+        $fpdf->SetTextColor(50, 50, 50);
+        $fpdf->SetXY(110, 20);
+        $fpdf->Cell(80, 8, utf8_decode('RECIBO DE EVENTO'), 0, 1, 'R');
+        $fpdf->SetFont('Montserrat', '', 12);
+        $fpdf->SetTextColor(100, 100, 100);
+        $fpdf->SetXY(110, 28);
+        $fpdf->Cell(80, 6, utf8_decode('N° ' . $contract->code), 0, 1, 'R');
+
+        // Line separator
+        $fpdf->SetDrawColor(200, 200, 200);
+        $fpdf->SetLineWidth(0.5);
+        $fpdf->Line(20, 45, 190, 45);
+
+        // Section: Client Info & Event Info
+        $fpdf->SetXY(20, 55);
+
+        // Left Column (Client)
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->SetTextColor(30, 30, 30);
+        $fpdf->Cell(85, 6, utf8_decode('DATOS DEL CLIENTE'), 0, 0, 'L');
+        
+        // Right Column (Event)
+        $fpdf->Cell(85, 6, utf8_decode('DETALLES DEL EVENTO'), 0, 1, 'L');
+
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->SetTextColor(80, 80, 80);
+        
+        $fpdf->Ln(2);
+        
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 6, 'Nombre:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(60, 6, utf8_decode($contract->name), 0, 0);
+
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(30, 6, 'Fecha:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(55, 6, utf8_decode(optional($contract->event_date)->format('d/m/Y')), 0, 1);
+
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 6, 'DNI:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(60, 6, utf8_decode($contract->document), 0, 0);
+
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(30, 6, 'Personas:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(55, 6, utf8_decode($contract->people_number), 0, 1);
+
+        if ($contract->business_name) {
+            $fpdf->SetFont('Montserrat', 'B', 9);
+            $fpdf->Cell(25, 6, utf8_decode('Razón Soc.:'), 0, 0);
+            $fpdf->SetFont('Montserrat', '', 9);
+            $fpdf->Cell(60, 6, utf8_decode($contract->business_name), 0, 1);
+        }
+
+        $fpdf->Ln(15);
+        $fpdf->SetDrawColor(200, 200, 200);
+        $fpdf->Line(20, $fpdf->GetY(), 190, $fpdf->GetY());
+        $fpdf->Ln(10);
+
+        // Package Details
+        $fpdf->SetFont('Montserrat', 'B', 12);
+        $fpdf->SetTextColor(30, 30, 30);
+        $fpdf->Cell(170, 8, utf8_decode('RESUMEN DEL SERVICIO'), 0, 1, 'C');
+        $fpdf->Ln(5);
+
+        // Main details table
+        $fpdf->SetFillColor(245, 247, 250); // Light gray/blue
+        $fpdf->SetDrawColor(220, 225, 230);
+        $fpdf->SetLineWidth(0.3);
+
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  PAQUETE CONTRATADO'), 'B,T,L,R', 0, 'L', true);
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  ' . optional($contract->package)->name), 'B,T,L,R', 1, 'L');
+
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  MÉTODO DE PAGO'), 'B,L,R', 0, 'L', true);
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  ' . optional($contract->payment_method)->name), 'B,L,R', 1, 'L');
+
+        if ($contract->debt_payment_date) {
+            $fpdf->SetFont('Montserrat', 'B', 10);
+            $fpdf->Cell(85, 10, utf8_decode('  FECHA LIMITE DE PAGO'), 'B,L,R', 0, 'L', true);
+            $fpdf->SetFont('Montserrat', '', 10);
+            $fpdf->Cell(85, 10, utf8_decode('  ' . optional($contract->debt_payment_date)->format('d/m/Y')), 'B,L,R', 1, 'L');
+        }
+
+        $fpdf->Ln(10);
+
+        // Financials Box
+        $fpdf->SetX(100);
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->SetFillColor(255, 255, 255);
+        
+        // Monto Total
+        $fpdf->Cell(50, 8, utf8_decode('MONTO TOTAL:'), 0, 0, 'R');
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($contract->total, 2)), 0, 1, 'R');
+
+        // Total Abonado / Pagos
+        $additionalPayments = $contract->payments->sum('amount');
+        if ($additionalPayments > 0) {
+            if ($contract->initial_payment > 0) {
+                $fpdf->SetX(100);
+                $fpdf->SetFont('Montserrat', '', 9);
+                $fpdf->SetTextColor(100, 100, 100);
+                $fpdf->Cell(50, 6, utf8_decode('Pago inicial:'), 0, 0, 'R');
+                $fpdf->Cell(40, 6, utf8_decode('S/ ' . number_format($contract->initial_payment, 2)), 0, 1, 'R');
+            }
+            $fpdf->SetX(100);
+            $fpdf->SetFont('Montserrat', '', 9);
+            $fpdf->SetTextColor(100, 100, 100);
+            $fpdf->Cell(50, 6, utf8_decode('Abonos en cobranzas:'), 0, 0, 'R');
+            $fpdf->Cell(40, 6, utf8_decode('S/ ' . number_format($additionalPayments, 2)), 0, 1, 'R');
+
+            $fpdf->SetX(100);
+            $fpdf->SetFont('Montserrat', 'B', 10);
+            $fpdf->SetTextColor(40, 167, 69); // Green for payments
+            $fpdf->Cell(50, 8, utf8_decode('TOTAL ABONADO:'), 0, 0, 'R');
+            $fpdf->SetFont('Montserrat', 'B', 11);
+            $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($contract->total_paid, 2)), 0, 1, 'R');
+            $fpdf->SetTextColor(30, 30, 30); // reset
+        } elseif ($contract->initial_payment > 0) {
+            $fpdf->SetX(100);
+            $fpdf->SetFont('Montserrat', 'B', 10);
+            $fpdf->SetTextColor(40, 167, 69); // Green for payments
+            $fpdf->Cell(50, 8, utf8_decode('PAGO INICIAL / A CUENTA:'), 0, 0, 'R');
+            $fpdf->SetFont('Montserrat', '', 11);
+            $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($contract->initial_payment, 2)), 0, 1, 'R');
+            $fpdf->SetTextColor(30, 30, 30); // reset
+        }
+
+        // Debt
+        if ($contract->debt > 0) {
+            $fpdf->SetX(100);
+            $fpdf->SetFont('Montserrat', 'B', 10);
+            $fpdf->SetTextColor(220, 53, 69); // Red for debt
+            $fpdf->Cell(50, 8, utf8_decode('SALDO PENDIENTE:'), 0, 0, 'R');
+            $fpdf->SetFont('Montserrat', 'B', 11);
+            $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($contract->debt, 2)), 0, 1, 'R');
+            $fpdf->SetTextColor(30, 30, 30); // reset
+        }
+
+        // Footer
+        $fpdf->SetY(-40);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->SetTextColor(150, 150, 150);
+        $fpdf->Cell(0, 5, utf8_decode('Gracias por elegir Quinta Fernandini.'), 0, 1, 'C');
+        $fpdf->Cell(0, 5, utf8_decode('Para cualquier consulta, por favor contáctenos con su número de recibo.'), 0, 1, 'C');
+
+        $fpdf->Output('I', 'Detalles_Contrato_' . $contract->id . '.pdf');
+    }
+
+    public function paymentPdf(Payment $payment)
+    {
+        $contract = $payment->contract;
+        $fpdf = new Fpdf();
+        $fpdf->SetMargins(20, 20, 20);
+        $fpdf->AddPage();
+        $fpdf->AddFont('Montserrat', '');
+        $fpdf->AddFont('Montserrat', 'B');
+
+        // Header Logo
+        $fpdf->Image(public_path('assets/images/logonew2.png'), 20, 15, 45);
+
+        // Header Text (Right aligned)
+        $fpdf->SetFont('Montserrat', 'B', 16);
+        $fpdf->SetTextColor(50, 50, 50);
+        $fpdf->SetXY(110, 20);
+        $fpdf->Cell(80, 8, utf8_decode('RECIBO DE PAGO'), 0, 1, 'R');
+        $fpdf->SetFont('Montserrat', '', 12);
+        $fpdf->SetTextColor(100, 100, 100);
+        $fpdf->SetXY(110, 28);
+        $fpdf->Cell(80, 6, utf8_decode('N° P-' . str_pad($payment->id, 4, '0', STR_PAD_LEFT)), 0, 1, 'R');
+
+        // Line separator
+        $fpdf->SetDrawColor(200, 200, 200);
+        $fpdf->SetLineWidth(0.5);
+        $fpdf->Line(20, 45, 190, 45);
+
+        // Section: Client Info & Event Info
+        $fpdf->SetXY(20, 55);
+
+        // Left Column (Client)
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->SetTextColor(30, 30, 30);
+        $fpdf->Cell(85, 6, utf8_decode('DATOS DEL CLIENTE'), 0, 0, 'L');
+        
+        // Right Column (Event)
+        $fpdf->Cell(85, 6, utf8_decode('DETALLES DEL CONTRATO'), 0, 1, 'L');
+
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->SetTextColor(80, 80, 80);
+        
+        $fpdf->Ln(2);
+        
+        $startY = $fpdf->GetY();
+       
+        // Left Column
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 5, 'Nombre:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        // Using MultiCell for the name so it wraps instead of overflowing
+        $fpdf->MultiCell(60, 5, utf8_decode($contract->name), 0, 'L');
+        
+        $yAfterName = $fpdf->GetY();
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 5, 'DNI:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(60, 5, utf8_decode($contract->document), 0, 1);
+        $yAfterDni = $fpdf->GetY();
+
+        // Right Column
+        $fpdf->SetXY(110, $startY);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(30, 5, utf8_decode('Código:'), 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(50, 5, utf8_decode($contract->code), 0, 1);
+
+        $fpdf->SetXY(110, $startY + 5);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(30, 5, 'Fecha de evento:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(50, 5, utf8_decode(optional($contract->event_date)->format('d/m/Y')), 0, 1);
+
+        // Reset Y below the tallest column
+        $maxY = max($yAfterDni, $fpdf->GetY());
+        $fpdf->SetY($maxY);
+
+        $fpdf->Ln(15);
+        $fpdf->SetDrawColor(200, 200, 200);
+        $fpdf->Line(20, $fpdf->GetY(), 190, $fpdf->GetY());
+        $fpdf->Ln(10);
+
+        // Package Details
+        $fpdf->SetFont('Montserrat', 'B', 12);
+        $fpdf->SetTextColor(30, 30, 30);
+        $fpdf->Cell(170, 8, utf8_decode('DETALLES DEL PAGO'), 0, 1, 'C');
+        $fpdf->Ln(5);
+
+        // Main details table
+        $fpdf->SetFillColor(245, 247, 250); // Light gray/blue
+        $fpdf->SetDrawColor(220, 225, 230);
+        $fpdf->SetLineWidth(0.3);
+
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  MÉTODO DE PAGO'), 'B,T,L,R', 0, 'L', true);
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  ' . optional($payment->payment_method)->name), 'B,T,L,R', 1, 'L');
+
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  NÚMERO DE OPERACIÓN'), 'B,L,R', 0, 'L', true);
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  ' . ($payment->operation_number ? $payment->operation_number : '-')), 'B,L,R', 1, 'L');
+
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  FECHA DE PAGO'), 'B,L,R', 0, 'L', true);
+        $fpdf->SetFont('Montserrat', '', 10);
+        $fpdf->Cell(85, 10, utf8_decode('  ' . optional($payment->date)->format('d/m/Y')), 'B,L,R', 1, 'L');
+
+        $fpdf->Ln(10);
+
+        // Financials Box
+        $fpdf->SetX(100);
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->SetFillColor(255, 255, 255);
+        
+        $fpdf->Cell(50, 8, utf8_decode('MONTO PAGADO:'), 0, 0, 'R');
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->SetTextColor(40, 167, 69);
+        $fpdf->Cell(40, 8, utf8_decode('S/ ' . number_format($payment->amount, 2)), 0, 1, 'R');
+        $fpdf->SetTextColor(30, 30, 30); // reset
+
+        // Footer
+        $fpdf->SetY(-40);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->SetTextColor(150, 150, 150);
+        $fpdf->Cell(0, 5, utf8_decode('Gracias por su pago.'), 0, 1, 'C');
+
+        $fpdf->Output('I', 'Recibo_Pago_' . $payment->id . '.pdf');
+    }
+
+    public function paymentsPdf(Contract $contract)
+    {
+        $fpdf = new Fpdf();
+        $fpdf->SetMargins(20, 20, 20);
+        $fpdf->AddPage();
+        $fpdf->AddFont('Montserrat', '');
+        $fpdf->AddFont('Montserrat', 'B');
+
+        // Header Logo
+        if (file_exists(public_path('assets/images/logonew2.png'))) {
+            $fpdf->Image(public_path('assets/images/logonew2.png'), 20, 15, 45);
+        }
+
+        // Header Title (Right aligned)
+        $fpdf->SetFont('Montserrat', 'B', 15);
+        $fpdf->SetTextColor(50, 50, 50);
+        $fpdf->SetXY(100, 20);
+        $fpdf->Cell(90, 8, utf8_decode('HISTORIAL DE PAGOS'), 0, 1, 'R');
+        $fpdf->SetFont('Montserrat', '', 11);
+        $fpdf->SetTextColor(100, 100, 100);
+        $fpdf->SetXY(100, 28);
+        $fpdf->Cell(90, 6, utf8_decode('CONTRATO N° ' . $contract->code), 0, 1, 'R');
+
+        // Line separator
+        $fpdf->SetDrawColor(200, 200, 200);
+        $fpdf->SetLineWidth(0.5);
+        $fpdf->Line(20, 42, 190, 42);
+
+        // Client & Event Details Section
+        $fpdf->SetXY(20, 48);
+
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->SetTextColor(30, 30, 30);
+        $fpdf->Cell(85, 6, utf8_decode('DATOS DEL CLIENTE'), 0, 0, 'L');
+        $fpdf->Cell(85, 6, utf8_decode('INFORMACIÓN DEL EVENTO'), 0, 1, 'L');
+
+        $startY = $fpdf->GetY() + 2;
+
+        // Left Column: Client info
+        $fpdf->SetXY(20, $startY);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 5, 'Cliente:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->MultiCell(60, 5, utf8_decode($contract->name), 0, 'L');
+
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(25, 5, 'DNI / RUC:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(60, 5, utf8_decode($contract->document . ($contract->business_document ? ' / ' . $contract->business_document : '')), 0, 1);
+
+        if ($contract->phone) {
+            $fpdf->SetFont('Montserrat', 'B', 9);
+            $fpdf->Cell(25, 5, utf8_decode('Teléfono:'), 0, 0);
+            $fpdf->SetFont('Montserrat', '', 9);
+            $fpdf->Cell(60, 5, utf8_decode($contract->phone), 0, 1);
+        }
+
+        $leftY = $fpdf->GetY();
+
+        // Right Column: Event info
+        $fpdf->SetXY(110, $startY);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(35, 5, 'Tipo de Evento:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(45, 5, utf8_decode(optional($contract->event_type)->name), 0, 1);
+
+        $fpdf->SetXY(110, $startY + 5);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(35, 5, 'Fecha de Evento:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(45, 5, utf8_decode(optional($contract->event_date)->format('d/m/Y')), 0, 1);
+
+        $fpdf->SetXY(110, $startY + 10);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(35, 5, 'Paquete:', 0, 0);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->Cell(45, 5, utf8_decode(optional($contract->package)->name), 0, 1);
+
+        $rightY = $startY + 15;
+        $maxY = max($leftY, $rightY) + 5;
+
+        $fpdf->SetY($maxY);
+        $fpdf->SetDrawColor(200, 200, 200);
+        $fpdf->Line(20, $fpdf->GetY(), 190, $fpdf->GetY());
+        $fpdf->Ln(6);
+
+        // Payments Table Header
+        $fpdf->SetFont('Montserrat', 'B', 11);
+        $fpdf->SetTextColor(30, 30, 30);
+        $fpdf->Cell(170, 7, utf8_decode('DETALLE DE CUOTAS Y PAGOS REALIZADOS'), 0, 1, 'L');
+        $fpdf->Ln(2);
+
+        $fpdf->SetFillColor(70, 95, 255);
+        $fpdf->SetTextColor(255, 255, 255);
+        $fpdf->SetDrawColor(70, 95, 255);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+
+        $fpdf->Cell(10, 8, utf8_decode('N°'), 1, 0, 'C', true);
+        $fpdf->Cell(42, 8, utf8_decode('CONCEPTO / CUOTA'), 1, 0, 'L', true);
+        $fpdf->Cell(30, 8, utf8_decode('N° OPERACIÓN'), 1, 0, 'C', true);
+        $fpdf->Cell(33, 8, utf8_decode('MÉTODO DE PAGO'), 1, 0, 'L', true);
+        $fpdf->Cell(25, 8, utf8_decode('FECHA'), 1, 0, 'C', true);
+        $fpdf->Cell(30, 8, utf8_decode('MONTO'), 1, 1, 'R', true);
+
+        $fpdf->SetTextColor(50, 50, 50);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->SetDrawColor(220, 225, 230);
+        $fill = false;
+
+        $itemNum = 1;
+        $totalPaymentsSum = 0;
+
+        // 1. Initial Payment row (if any)
+        if (floatval($contract->initial_payment) > 0) {
+            $fpdf->SetFillColor(248, 249, 250);
+            $fpdf->Cell(10, 7, $itemNum++, 1, 0, 'C', $fill);
+            $fpdf->Cell(42, 7, utf8_decode('Pago Inicial / A cuenta'), 1, 0, 'L', $fill);
+            $fpdf->Cell(30, 7, '-', 1, 0, 'C', $fill);
+            $fpdf->Cell(33, 7, utf8_decode(optional($contract->payment_method)->name ?? '-'), 1, 0, 'L', $fill);
+            $fpdf->Cell(25, 7, optional($contract->date)->format('d/m/Y') ?? '-', 1, 0, 'C', $fill);
+            $fpdf->Cell(30, 7, 'S/ ' . number_format($contract->initial_payment, 2), 1, 1, 'R', $fill);
+            $totalPaymentsSum += floatval($contract->initial_payment);
+            $fill = !$fill;
+        }
+
+        // 2. Payments list
+        $payments = $contract->payments()->with('payment_method')->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+        foreach ($payments as $idx => $payment) {
+            $fpdf->SetFillColor(248, 249, 250);
+            $fpdf->Cell(10, 7, $itemNum++, 1, 0, 'C', $fill);
+            $fpdf->Cell(42, 7, utf8_decode('Cuota / Abono #' . ($idx + 1)), 1, 0, 'L', $fill);
+            $fpdf->Cell(30, 7, utf8_decode($payment->operation_number ?: '-'), 1, 0, 'C', $fill);
+            $fpdf->Cell(33, 7, utf8_decode(optional($payment->payment_method)->name ?? '-'), 1, 0, 'L', $fill);
+            $fpdf->Cell(25, 7, optional($payment->date)->format('d/m/Y'), 1, 0, 'C', $fill);
+            $fpdf->Cell(30, 7, 'S/ ' . number_format($payment->amount, 2), 1, 1, 'R', $fill);
+            $totalPaymentsSum += floatval($payment->amount);
+            $fill = !$fill;
+        }
+
+        if ($itemNum == 1) {
+            $fpdf->Cell(170, 8, utf8_decode('No se registraron cuotas ni abonos.'), 1, 1, 'C', false);
+        }
+
+        $fpdf->Ln(6);
+
+        // Subtotals & Totals Summary Table
+        $fpdf->SetX(90);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->SetFillColor(245, 247, 250);
+
+        // Contract Total
+        $fpdf->Cell(50, 7, utf8_decode('TOTAL CONTRATO:'), 1, 0, 'R', true);
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->Cell(50, 7, 'S/ ' . number_format($contract->total, 2), 1, 1, 'R', false);
+
+        // Total Paid
+        $fpdf->SetX(90);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(50, 7, utf8_decode('TOTAL ABONADO / PAGADO:'), 1, 0, 'R', true);
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        $fpdf->SetTextColor(40, 167, 69);
+        $fpdf->Cell(50, 7, 'S/ ' . number_format($totalPaymentsSum, 2), 1, 1, 'R', false);
+        $fpdf->SetTextColor(50, 50, 50);
+
+        // Debt
+        $debt = floatval($contract->total) - $totalPaymentsSum;
+        if ($debt < 0) $debt = 0;
+
+        $fpdf->SetX(90);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(50, 7, utf8_decode('SALDO PENDIENTE:'), 1, 0, 'R', true);
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        if ($debt > 0) {
+            $fpdf->SetTextColor(220, 53, 69);
+        } else {
+            $fpdf->SetTextColor(40, 167, 69);
+        }
+        $fpdf->Cell(50, 7, 'S/ ' . number_format($debt, 2), 1, 1, 'R', false);
+        $fpdf->SetTextColor(50, 50, 50);
+
+        // Status badge row
+        $fpdf->SetX(90);
+        $fpdf->SetFont('Montserrat', 'B', 9);
+        $fpdf->Cell(50, 7, utf8_decode('ESTADO DEL PAGO:'), 1, 0, 'R', true);
+        $fpdf->SetFont('Montserrat', 'B', 10);
+        if ($contract->paid) {
+            $fpdf->SetTextColor(40, 167, 69);
+            $fpdf->Cell(50, 7, utf8_decode('TOTALMENTE PAGADO'), 1, 1, 'R', false);
+        } else {
+            $fpdf->SetTextColor(220, 53, 69);
+            $fpdf->Cell(50, 7, utf8_decode('PENDIENTE DE PAGO'), 1, 1, 'R', false);
+        }
+
+        // Footer
+        $fpdf->SetY(-35);
+        $fpdf->SetFont('Montserrat', '', 9);
+        $fpdf->SetTextColor(150, 150, 150);
+        $fpdf->Cell(0, 5, utf8_decode('Quinta Fernandini Recepciones - Documento informativo de pagos'), 0, 1, 'C');
+
+        $fpdf->Output('I', 'Historial_Pagos_' . $contract->code . '.pdf');
     }
 }

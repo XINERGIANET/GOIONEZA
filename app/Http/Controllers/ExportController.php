@@ -153,12 +153,12 @@ class ExportController extends Controller
                 $data[] = [utf8_decode($r->description), $r->amount, utf8_decode(optional($r->income_type)->name), utf8_decode(optional($r->payment_method)->name), utf8_decode(optional($r->location)->name), $r->date ? $r->date->format('d/m/Y') : ''];
             }
         } elseif ($module == 'charges') {
-            $records = \App\Models\Contract::with(['package'])->where('debt', '>', 0)->orderBy('debt_payment_date', 'asc')->get();
-            $headings = ['DNI', 'Codigo', 'Nombre', 'Fecha evento', 'Paquete', 'Total', 'Pago inicial', 'Deuda', 'Fecha pago'];
+            $records = \App\Models\Contract::with(['package', 'payments'])->where('debt', '>', 0)->orderBy('debt_payment_date', 'asc')->get();
+            $headings = ['DNI', 'Codigo', 'Nombre', 'Fecha evento', 'Paquete', 'Total', 'Pago inicial', 'Total abonado', 'Deuda', 'Fecha pago'];
             $title = 'CUENTAS POR COBRAR';
-            $widths = [20, 20, 40, 25, 25, 15, 15, 15, 15];
+            $widths = [18, 18, 35, 22, 22, 15, 15, 15, 15, 15];
             foreach ($records as $r) {
-                $data[] = [$r->document, utf8_decode($r->code), utf8_decode($r->name), $r->event_date ? $r->event_date->format('d/m/Y') : '', utf8_decode(optional($r->package)->name), $r->total, $r->initial_payment, $r->debt, $r->debt_payment_date ? $r->debt_payment_date->format('d/m/Y') : ''];
+                $data[] = [$r->document, utf8_decode($r->code), utf8_decode($r->name), $r->event_date ? $r->event_date->format('d/m/Y') : '', utf8_decode(optional($r->package)->name), $r->total, $r->initial_payment, $r->total_paid, $r->debt, $r->debt_payment_date ? $r->debt_payment_date->format('d/m/Y') : ''];
             }
         } elseif ($module == 'payment_schedules') {
             $records = \App\Models\PaymentSchedule::orderBy('day', 'asc')->get();
@@ -167,6 +167,14 @@ class ExportController extends Controller
             $widths = [110, 40, 40];
             foreach ($records as $r) {
                 $data[] = [utf8_decode($r->description), $r->amount, $r->day];
+            }
+        } elseif ($module == 'payment_methods') {
+            $records = \App\Models\PaymentMethod::active()->orderBy('name', 'asc')->get();
+            $headings = ['Nombre'];
+            $title = 'METODOS DE PAGO';
+            $widths = [190];
+            foreach ($records as $r) {
+                $data[] = [utf8_decode($r->name)];
             }
         } else {
             return back()->with('error', 'Módulo no soportado para exportación');
@@ -215,28 +223,27 @@ class ExportController extends Controller
             $fpdf->Cell(190, 10, utf8_decode($title), 0, 1, 'C');
             $fpdf->Ln(5);
 
-            try {
-                $fpdf->SetFont('Montserrat', 'B', 10);
-            } catch (\Exception $e) {
-                $fpdf->SetFont('Arial', 'B', 10);
-            }
+            // Determinar alineaciones dinámicas según las columnas
+            $aligns = $this->getAlignmentsFromHeadings($headings);
 
-            foreach ($headings as $index => $heading) {
-                $fpdf->Cell($widths[$index], 10, utf8_decode($heading), 1, 0, 'C');
-            }
-            $fpdf->Ln();
-
+            // Dibujar encabezados con fuente Montserrat Bold 8pt y fondo gris claro
             try {
-                $fpdf->SetFont('Montserrat', '', 9);
+                $fpdf->SetFont('Montserrat', 'B', 8);
             } catch (\Exception $e) {
-                $fpdf->SetFont('Arial', '', 9);
+                $fpdf->SetFont('Arial', 'B', 8);
+            }
+            $fpdf->SetFillColor(240, 240, 240);
+            $this->drawWrappedRow($fpdf, $widths, $headings, 4, 2, 'C', true, false);
+
+            // Dibujar filas de datos con fuente Montserrat Regular 7.5pt
+            try {
+                $fpdf->SetFont('Montserrat', '', 7.5);
+            } catch (\Exception $e) {
+                $fpdf->SetFont('Arial', '', 7.5);
             }
 
             foreach ($data as $row) {
-                foreach ($row as $index => $cell) {
-                    $fpdf->Cell($widths[$index], 8, substr($cell, 0, 30), 1, 0, 'L');
-                }
-                $fpdf->Ln();
+                $this->drawWrappedRow($fpdf, $widths, $row, 4, 2, $aligns, false, true, $headings);
             }
 
             $fpdf->Output('D', $module . '_' . date('Ymd_His') . '.pdf');
@@ -244,5 +251,193 @@ class ExportController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Divide un texto en múltiples líneas de un ancho máximo en FPDF.
+     * Soporta caracteres codificados en ISO-8859-1 (conversiones utf8_decode).
+     */
+    private function splitTextIntoLines($fpdf, $text, $width)
+    {
+        $text = (string) $text; // Asegurar que sea string
+        $lines = [];
+        $availableWidth = $width - 2; // Margen de 1mm por lado
+        if ($availableWidth <= 0) {
+            $availableWidth = 1;
+        }
+        
+        $text = str_replace("\r", "", $text);
+        $textRows = explode("\n", $text);
+        
+        foreach ($textRows as $row) {
+            $words = explode(' ', $row);
+            $currentLine = '';
+            foreach ($words as $word) {
+                $testLine = $currentLine === '' ? $word : $currentLine . ' ' . $word;
+                if ($fpdf->GetStringWidth($testLine) <= $availableWidth) {
+                    $currentLine = $testLine;
+                } else {
+                    if ($currentLine !== '') {
+                        $lines[] = $currentLine;
+                        $currentLine = $word;
+                    } else {
+                        // Si la palabra es más ancha que la celda, la dividimos letra por letra
+                        $chars = str_split($word);
+                        $temp = '';
+                        foreach ($chars as $char) {
+                            if ($fpdf->GetStringWidth($temp . $char) <= $availableWidth) {
+                                $temp .= $char;
+                            } else {
+                                if ($temp !== '') {
+                                    $lines[] = $temp;
+                                }
+                                $temp = $char;
+                            }
+                        }
+                        $currentLine = $temp;
+                    }
+                }
+            }
+            if ($currentLine !== '') {
+                $lines[] = $currentLine;
+            }
+        }
+        
+        if (empty($lines)) {
+            $lines[] = '';
+        }
+        
+        return $lines;
+    }
+
+    /**
+     * Dibuja una fila con ajuste dinámico de múltiples líneas (hasta 2 filas por celda).
+     * Si el texto tiene 1 línea, lo centra verticalmente. Si tiene más de 2, lo trunca en la 2da.
+     */
+    private function drawWrappedRow($fpdf, $widths, $row, $lineHeight = 4, $maxLines = 2, $align = 'L', $fill = false, $isDataRow = true, $headings = null)
+    {
+        $rowLines = [];
+        $actualMaxLines = 1;
+        
+        foreach ($row as $index => $cell) {
+            $lines = $this->splitTextIntoLines($fpdf, $cell, $widths[$index]);
+            $rowLines[$index] = $lines;
+            if (count($lines) > $actualMaxLines) {
+                $actualMaxLines = count($lines);
+            }
+        }
+        
+        if ($actualMaxLines > $maxLines) {
+            $actualMaxLines = $maxLines;
+        }
+        
+        $rowHeight = $actualMaxLines * $lineHeight;
+        $startX = $fpdf->GetX();
+        $startY = $fpdf->GetY();
+        
+        // Control de salto de página
+        $pageHeight = method_exists($fpdf, 'GetPageHeight') ? $fpdf->GetPageHeight() : 297; // 297mm es el estándar A4
+        if ($startY + $rowHeight > $pageHeight - 15) {
+            $fpdf->AddPage();
+            $fpdf->Ln(10); // Margen superior para el inicio de tabla en la nueva página
+            
+            // Si es una fila de datos, redibujar los encabezados en la nueva página
+            if ($isDataRow && !empty($headings) && !empty($widths)) {
+                try {
+                    $fpdf->SetFont('Montserrat', 'B', 8);
+                } catch (\Exception $e) {
+                    $fpdf->SetFont('Arial', 'B', 8);
+                }
+                $fpdf->SetFillColor(240, 240, 240);
+                $this->drawWrappedRow($fpdf, $widths, $headings, 4, 2, 'C', true, false);
+                
+                try {
+                    $fpdf->SetFont('Montserrat', '', 7.5);
+                } catch (\Exception $e) {
+                    $fpdf->SetFont('Arial', '', 7.5);
+                }
+            }
+            
+            $startX = $fpdf->GetX();
+            $startY = $fpdf->GetY();
+        }
+        
+        foreach ($row as $index => $cell) {
+            $w = $widths[$index];
+            $lines = $rowLines[$index];
+            $cellAlign = is_array($align) ? ($align[$index] ?? 'L') : $align;
+            
+            // Dibujar borde y fondo de la celda vacía
+            $fpdf->Cell($w, $rowHeight, '', 1, 0, 'C', $fill);
+            
+            $nextX = $fpdf->GetX();
+            $availableWidth = $w - 2;
+            if ($availableWidth <= 0) {
+                $availableWidth = 1;
+            }
+            
+            // Escribir texto de la celda respetando la alineación y el centrado vertical
+            if (count($lines) >= 2 && $actualMaxLines >= 2) {
+                // Fila 1
+                $fpdf->SetXY($startX + 1, $startY + ($rowHeight - (2 * $lineHeight)) / 2);
+                $fpdf->Cell($w - 2, $lineHeight, $lines[0] ?? '', 0, 0, $cellAlign);
+                
+                // Fila 2
+                $line2 = $lines[1] ?? '';
+                if (count($lines) > 2) {
+                    while ($fpdf->GetStringWidth($line2 . '..') > $availableWidth && strlen($line2) > 1) {
+                        $line2 = substr($line2, 0, -1);
+                    }
+                    $line2 .= '..';
+                }
+                $fpdf->SetXY($startX + 1, $startY + ($rowHeight - (2 * $lineHeight)) / 2 + $lineHeight);
+                $fpdf->Cell($w - 2, $lineHeight, $line2, 0, 0, $cellAlign);
+            } else {
+                // Única fila centrada verticalmente
+                $fpdf->SetXY($startX + 1, $startY + ($rowHeight - $lineHeight) / 2);
+                $fpdf->Cell($w - 2, $lineHeight, $lines[0] ?? '', 0, 0, $cellAlign);
+            }
+            
+            $startX = $nextX;
+            $fpdf->SetXY($startX, $startY);
+        }
+        
+        $fpdf->Ln($rowHeight);
+    }
+
+    /**
+     * Determina las alineaciones dinámicas de cada columna según el texto del encabezado.
+     */
+    private function getAlignmentsFromHeadings($headings)
+    {
+        $aligns = [];
+        foreach ($headings as $heading) {
+            $headingClean = str_replace(
+                ['á', 'é', 'í', 'ó', 'ú', 'ñ'],
+                ['a', 'e', 'i', 'o', 'u', 'n'],
+                mb_strtolower(trim($heading))
+            );
+            
+            if (strpos($headingClean, 'metodo') !== false) {
+                $aligns[] = 'C';
+            } elseif ($headingClean === 'monto' || $headingClean === 'total' || $headingClean === 'deuda' || $headingClean === 'dscto' || $headingClean === 'pago inicial') {
+                $aligns[] = 'R';
+            } elseif (
+                $headingClean === 'fecha' || 
+                $headingClean === 'dia' || 
+                $headingClean === 'numero' || 
+                $headingClean === 'num.' || 
+                $headingClean === 'dni' || 
+                $headingClean === 'codigo' || 
+                $headingClean === 'dni/ruc' || 
+                $headingClean === 'duracion' || 
+                $headingClean === 'pax'
+            ) {
+                $aligns[] = 'C';
+            } else {
+                $aligns[] = 'L';
+            }
+        }
+        return $aligns;
     }
 }

@@ -12,6 +12,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CommissionController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\PaymentScheduleController;
 use App\Http\Controllers\IncomeTypeController;
@@ -62,6 +63,8 @@ Route::middleware('auth')->group(function(){
 	
 	Route::resource('commissions', CommissionController::class);
 	
+	Route::resource('payment_methods', PaymentMethodController::class);
+	
 	Route::resource('income_types', IncomeTypeController::class);
 	
 	Route::resource('expense_types', ExpenseTypeController::class);
@@ -76,6 +79,8 @@ Route::middleware('auth')->group(function(){
 	Route::get('contracts/charges', [ContractController::class, 'charges'])->name('contracts.charges');
 	Route::post('contracts/{contract}/payment', [ContractController::class, 'payment'])->name('contracts.payment');
 	Route::get('contracts/{contract}/payments', [ContractController::class, 'payments'])->name('contracts.payments');
+	Route::get('contracts/{contract}/payments-pdf', [ContractController::class, 'paymentsPdf'])->name('contracts.paymentsPdf');
+	Route::get('payments/{payment}/pdf', [ContractController::class, 'paymentPdf'])->name('payments.pdf');
 	Route::post('contracts/{contract}/extra', [ContractController::class, 'extra'])->name('contracts.extra');
 	Route::get('contracts/{contract}/employees', [ContractController::class, 'employees'])->name('contracts.employees');
 	Route::post('contracts/{contract}/employee', [ContractController::class, 'employee'])->name('contracts.employee');
@@ -85,6 +90,7 @@ Route::middleware('auth')->group(function(){
 	Route::post('contracts/{contract}/total', [ContractController::class, 'updateTotal'])->name('contracts.updateTotal');
 	Route::get('contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf');
 	Route::get('contracts/{contract}/pdf2', [ContractController::class, 'pdf2'])->name('contracts.pdf2');
+	Route::get('contracts/{contract}/pdf3', [ContractController::class, 'pdf3'])->name('contracts.pdf3');
 	Route::resource('contracts', ContractController::class);
 
 	Route::resource('incomes', IncomeController::class);
@@ -93,6 +99,8 @@ Route::middleware('auth')->group(function(){
 	Route::resource('purchases', PurchaseController::class);
 	
 	Route::get('expenses/report', [ExpenseController::class, 'report'])->name('expenses.report');
+	Route::get('expenses/personnel', [ExpenseController::class, 'personnel'])->name('personnel_expenses.index');
+	Route::get('expenses/{expense}/pdf', [ExpenseController::class, 'pdf'])->name('expenses.pdf');
 	Route::resource('expenses', ExpenseController::class);
 	
 	Route::get('products/{product}/movements', [ProductController::class, 'movements'])->name('products.movements');

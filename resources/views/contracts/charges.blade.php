@@ -67,8 +67,9 @@
 					<th>Nombre</th>
 					<th>Fecha de evento</th>
 					<th>Paquete</th>
-					<th>Total inicial</th>
+					<th>Total</th>
 					<th>Pago inicial</th>
+					<th>Total abonado</th>
 					<th>Deuda</th>
 					<th>Fecha de pago de deuda</th>
 					<th>Acción</th>
@@ -83,9 +84,10 @@
 					<td>{{ $contract->name }}</td>
 					<td>{{ $contract->event_date->format('d/m/Y') }}</td>
 					<td>{{ optional($contract->package)->name }}</td>
-					<td>S/{{ $contract->total }}</td>
-					<td>S/{{ $contract->initial_payment }}</td>
-					<td>S/{{ $contract->debt }}</td>
+					<td>S/{{ number_format($contract->total, 2) }}</td>
+					<td>S/{{ number_format($contract->initial_payment, 2) }}</td>
+					<td><span class="text-success fw-bold">S/{{ number_format($contract->total_paid, 2) }}</span></td>
+					<td>S/{{ number_format($contract->debt, 2) }}</td>
 					<td>{{ $contract->debt_payment_date->format('d/m/Y') }}</td>
 					<td>
 						<div class="d-flex gap-2">
@@ -172,6 +174,11 @@
   	<div class="modal-content">
   		<div class="modal-header">
   		  <h5 class="modal-title">Pagos realizados</h5>
+  		  <div class="ms-auto me-2">
+  		    <a href="#" id="btnExportPaymentsPdf" target="_blank" class="btn btn-outline-danger btn-sm d-none">
+  		      <i class="ti ti-file-type-pdf icon"></i> Exportar PDF
+  		    </a>
+  		  </div>
   		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   		</div>
   		<div class="modal-body">
@@ -182,6 +189,7 @@
   		  			<th>Monto</th>
   		  			<th>Método de pago</th>
   		  			<th>Fecha</th>
+  		  			<th>Acción</th>
   		  		</tr>
   		  	</thead>
   		  	<tbody id="tbl-payments"></tbody>
@@ -250,11 +258,22 @@
 								<td>${payment.amount}</td>
 								<td>${payment.payment_method ?? '' }</td>
 								<td>${payment.date}</td>
+								<td>
+									<a href="${payment.pdf_url}" target="_blank" class="btn btn-icon btn-primary btn-sm" title="Imprimir" data-bs-toggle="tooltip">
+										<i class="ti ti-printer icon"></i>
+									</a>
+								</td>
 							</tr>
 						`;
 					});
 
 					$('#tbl-payments').html(html);
+
+					if (data.pdf_all_url) {
+						$('#btnExportPaymentsPdf').attr('href', data.pdf_all_url).removeClass('d-none');
+					} else {
+						$('#btnExportPaymentsPdf').addClass('d-none');
+					}
 
 					$('#paymentsModal').modal('show');
 				}

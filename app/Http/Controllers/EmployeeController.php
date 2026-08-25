@@ -66,7 +66,9 @@ class EmployeeController extends Controller
 
     public function edit(Request $request, Employee $employee){
         $employee->load('user');
-        return response()->json($employee);
+        $data = $employee->toArray();
+        $data['birth_date'] = $employee->birth_date ? $employee->birth_date->format('Y-m-d') : null;
+        return response()->json($data);
     }
 
     public function update(Request $request, Employee $employee){
